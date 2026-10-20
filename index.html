@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F6F0E2">
+<meta name="description" content="A simple reading tracker for keen readers: log your books, see how many words you've read this year, and chat about the story so far. Demo content only.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Reading Buddy">
+<meta property="og:title" content="Reading Buddy – a prototype">
+<meta property="og:description" content="A simple reading tracker for keen readers: log your books, see how many words you've read this year, and chat about the story so far. Demo content only.">
+<meta property="og:locale" content="en_GB">
+<meta name="twitter:card" content="summary">
+<meta name="apple-mobile-web-app-title" content="Reading Buddy">
+<title>Reading Buddy (working title) – prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Inter from its designer's CDN keeps the cv05/cv08 alternates (tailed l, serifed I) that Google Fonts strips; Google's Inter is a fallback -->
+<link rel="preconnect" href="https://rsms.me">
+<link href="https://rsms.me/inter/inter.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Literata:opsz,wght@7..72,400..600&family=IBM+Plex+Sans:wght@400;600&family=Source+Serif+4:opsz,wght@8..60,400..600&display=swap" rel="stylesheet">
+<style>
+/* ===== Colour themes (see research/palettes.md for sources & contrast ratios) ===== */
+:root,[data-theme=charcoal]{--successInk:#1E1E1C;--streakBg:#2F2F2D;--streakInk:#FFFBF2;--heroSoft:#F1ECE1;--heroLine:#2F2F2D;--bg:#F6F0E2;--surface:#FFFBF2;--surface2:#EDE9DF;--ink:#1E1E1C;--ink2:#474641;--line:#D8D3C7;--field:#7C7A72;--accent:#2F2F2D;--onAccent:#FFFBF2;--accentSoft:#E9E6DE;--success:#9A8120;--onSuccess:#1E1E1C;--successSoft:#F5E4B8;--hl:#F5E4B8;--hlStrong:#8C7418;--heroBg:#FFFBF2;--heroInk:#1E1E1C;--heroNum:#2F2F2D;--recallBg:#F9EFD3;--recallInk:#1E1E1C;--recallBorder:#9A8120;--focus:#8C7418;--danger:#2E2E2C}
+[data-theme=green]{--successInk:#1F4A3A;--streakBg:#1F4A3A;--streakInk:#FFFBF2;--heroSoft:#F1ECE1;--heroLine:#1F4A3A;--bg:#F6F0E2;--surface:#FFFBF2;--surface2:#EDE9DF;--ink:#1E1E1C;--ink2:#474641;--line:#D8D3C7;--field:#7C7A72;--accent:#1F4A3A;--onAccent:#FFFBF2;--accentSoft:#E4ECE4;--success:#1F4A3A;--onSuccess:#FFFBF2;--successSoft:#E4ECE4;--hl:#F5E4B8;--hlStrong:#8C7418;--heroBg:#FFFBF2;--heroInk:#1E1E1C;--heroNum:#1F4A3A;--recallBg:#F9EFD3;--recallInk:#1E1E1C;--recallBorder:#9A8120;--focus:#8C7418;--danger:#2E2E2C}
+[data-theme=paper]{--successInk:#2A5131;--streakBg:#2A5131;--streakInk:#FFFBF2;--heroSoft:#F3E6CF;--heroLine:#7A2E26;--bg:#F6F0E2;--surface:#FFFBF2;--surface2:#EFE5D2;--ink:#231B14;--ink2:#4F4234;--line:#DDD0BA;--field:#8C7B66;--accent:#7A2E26;--onAccent:#FFFBF2;--accentSoft:#F3E1DA;--success:#2A5131;--onSuccess:#FFFBF2;--successSoft:#EDF2E6;--hl:#F5E4B8;--hlStrong:#9A6B12;--heroBg:#FFFBF2;--heroInk:#231B14;--heroNum:#7A2E26;--recallBg:#F5E4B8;--recallInk:#231B14;--recallBorder:#9A6B12;--focus:#B5701A;--danger:#8E1F17}
+/* ============ Layout tokens ============ */
+html,body{
+  /* aliases used throughout the layout – all point at the active theme */
+  --card:var(--surface); --muted:var(--ink2); --accent2:var(--accent);
+  --green:var(--success); --greenSoft:var(--successSoft); --gold:var(--hlStrong);
+  --radius:18px; --shadow:0 2px 10px rgba(30,30,28,.08);
+  --navH:84px;
+}
+/* ===== font styles (data-font on <html>) ===== */
+[data-font=classic]{--fBody:"InterVariable","Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;--fHead:"Literata",Georgia,"Times New Roman",serif;--wHead:600;--wStrong:600;--wQ:500;--bodyFeat:"cv05" 1,"cv08" 1;--headLS:0;--bodyLS:0;--numLS:-.01em}
+[data-font=editorial],:root:not([data-font]){--fBody:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;--fHead:"Source Serif 4",Georgia,"Times New Roman",serif;--wHead:600;--wStrong:600;--wQ:500;--bodyFeat:normal;--headLS:0;--bodyLS:.005em;--numLS:-.01em}
+[data-font=modern]{--fBody:"InterVariable","Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;--fHead:"InterVariable","Inter",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;--wHead:600;--wStrong:600;--wQ:500;--bodyFeat:"cv05" 1,"cv08" 1;--headLS:-.012em;--bodyLS:0;--numLS:-.02em}
+html[data-font=editorial]{font-size:20px}
+*{box-sizing:border-box}
+html{font-size:19px;-webkit-text-size-adjust:100%}
+@media (min-width:600px){html{font-size:20px}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--fBody);font-feature-settings:var(--bodyFeat);letter-spacing:var(--bodyLS);line-height:1.5}
+b,strong{font-weight:var(--wStrong)}
+h1,h2,h3,.serif{font-family:var(--fHead);font-weight:var(--wHead);letter-spacing:var(--headLS)}
+.num{font-variant-numeric:lining-nums tabular-nums}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--accent)}
+.app{max-width:760px;margin:0 auto;padding:0 16px calc(var(--navH) + 28px)}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 2px 4px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand .logo{width:44px;height:44px;border-radius:12px;background:var(--accent);color:var(--onAccent);display:grid;place-items:center;font-size:24px}
+.brand h1{font-size:1.25rem;margin:0;line-height:1.1}
+.brand small{display:block;font-family:var(--fBody);letter-spacing:0;white-space:nowrap;font-size:.72rem;color:var(--muted);font-weight:400}
+.pill{display:inline-block;font-size:.72rem;font-weight:var(--wStrong);padding:3px 10px;border-radius:99px;background:var(--surface2);color:var(--ink);border:1px solid var(--field);letter-spacing:.02em;vertical-align:middle}
+h2{font-size:1.45rem;margin:14px 0 10px}
+h3{font-size:1.12rem;margin:0 0 8px}
+p{margin:.4em 0}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin:14px 0;border:1px solid var(--line)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:56px;padding:12px 20px;border-radius:14px;border:2px solid var(--accent);background:var(--accent);color:var(--onAccent);font-weight:var(--wStrong);font-size:1rem;cursor:pointer;text-decoration:none}
+.btn:active{transform:translateY(1px)}
+.btn.secondary{background:var(--surface);color:var(--accent)}
+.btn.ghost{background:transparent;border-color:var(--line);color:var(--ink2)}
+.btn.green{background:var(--accent);border-color:var(--accent);color:var(--onAccent)}
+.btn.block{width:100%}
+.btn:focus-visible,input:focus-visible,select:focus-visible,.tab:focus-visible{outline:4px solid var(--focus);outline-offset:2px}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label.f{display:block;font-weight:var(--wStrong);margin:12px 0 6px}
+input[type=text],input[type=number],input[type=date],input[type=search],select{width:100%;min-height:56px;padding:10px 14px;border:2px solid var(--field);border-radius:12px;background:var(--surface);color:var(--ink);font-size:1rem}
+input:focus{border-color:var(--accent)}
+.hint{font-size:.85rem;color:var(--muted);margin-top:4px}
+
+/* ============ Bottom nav ============ */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:2px solid var(--line);display:flex;justify-content:center;z-index:30;padding-bottom:env(safe-area-inset-bottom)}
+nav.tabs .inner{display:grid;grid-template-columns:repeat(4,1fr);width:100%;max-width:760px}
+.tab{appearance:none;border:0;background:none;height:var(--navH);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:.82rem;font-weight:var(--wStrong);color:var(--muted);cursor:pointer;border-top:5px solid transparent}
+.tab svg{width:30px;height:30px}
+.tab[aria-selected=true]{color:var(--accent);border-top-color:var(--accent);background:var(--accentSoft)}
+
+/* ============ Dashboard ============ */
+.hero{padding:14px 18px;background:var(--heroBg);color:var(--heroInk);border:2px solid var(--heroLine);border-left-width:8px}
+.hero .big{color:var(--heroNum);font-family:var(--fHead);font-size:2.15rem;white-space:nowrap;font-weight:var(--wHead);letter-spacing:var(--numLS);font-variant-numeric:lining-nums tabular-nums;line-height:1.1;margin:4px 0}
+.hero .lbl{font-size:1rem}
+.hero .fun{margin-top:6px;background:var(--heroSoft);border-radius:12px;padding:10px 12px;font-size:.95rem}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 8px;text-align:center;box-shadow:var(--shadow)}
+.stat .n{font-family:var(--fHead);font-variant-numeric:lining-nums tabular-nums;letter-spacing:var(--numLS);font-size:1.75rem;font-weight:var(--wHead);color:var(--accent);line-height:1.1}
+.stat .t{font-size:.8rem;color:var(--ink2);font-weight:var(--wStrong)}
+.goal{display:flex;gap:18px;align-items:center}
+.ring{flex:0 0 auto;width:120px;height:120px;position:relative}
+.ring svg{width:120px;height:120px;transform:rotate(-90deg)}
+.ring .c{font-family:var(--fHead);font-variant-numeric:lining-nums tabular-nums;position:absolute;inset:0;display:grid;place-items:center;text-align:center;font-weight:var(--wStrong);line-height:1.1}
+.ring .c b{font-size:1.6rem;display:block;color:var(--successInk)}
+.bars{display:grid;grid-template-columns:repeat(12,1fr);gap:5px;align-items:end;height:170px;margin-top:10px;padding-top:20px}
+.bar{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%}
+.bar .b{width:100%;background:var(--accent2);border-radius:6px 6px 2px 2px;min-height:3px;position:relative}
+.bar .b.now{background:var(--hl);box-shadow:inset 0 0 0 3px var(--hlStrong)}
+.bar .v{font-size:.62rem;font-weight:var(--wStrong);color:var(--ink2);margin-bottom:3px;white-space:nowrap}
+.bar .m{font-size:.72rem;font-weight:var(--wStrong);color:var(--ink2);margin-top:5px}
+.current{display:flex;gap:14px;align-items:flex-start}
+.progress{height:16px;background:var(--surface2);box-shadow:inset 0 0 0 1px var(--line);border-radius:99px;overflow:hidden;margin:8px 0 4px}
+.progress>i{display:block;height:100%;background:var(--green);border-radius:99px}
+.streak{display:flex;gap:6px;margin-top:8px}
+.streak span{flex:1;height:30px;border-radius:8px;background:var(--surface2);display:grid;place-items:center;font-size:.7rem;font-weight:var(--wStrong);color:var(--ink2)}
+.streak span.on{background:var(--streakBg);color:var(--streakInk)}
+
+/* ============ Covers / lists ============ */
+.cover{flex:0 0 auto;width:78px;height:116px;border-radius:8px;object-fit:cover;background:var(--surface2);box-shadow:0 2px 6px rgba(0,0,0,.18)}
+img.cover{color:transparent;font-size:0}
+.cover.ph{display:grid;place-items:center;text-align:center;padding:6px;font-size:.62rem;font-weight:var(--wStrong);color:var(--onAccent);background:var(--accent);overflow:hidden;line-height:1.2}
+.cover.sm{width:58px;height:86px}
+.cover.lg{width:96px;height:144px}
+.book{display:flex;gap:14px;align-items:flex-start}
+.book .meta{flex:1;min-width:0}
+.book .title{font-family:var(--fHead);font-weight:var(--wHead);font-size:1.05rem;line-height:1.25}
+.book .author{color:var(--ink2)}
+.tagrow{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+.tag{font-size:.75rem;font-weight:var(--wStrong);padding:3px 10px;border-radius:99px;background:var(--surface2);color:var(--ink)}
+.tag.fin{background:var(--successSoft);color:var(--successInk)}
+.tag.rd{background:var(--hl);color:var(--ink)}
+.tag.demo{background:var(--surface2);color:var(--ink);box-shadow:inset 0 0 0 1px var(--field)}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.bookActions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.bookActions .btn:first-child{grid-column:1/-1;min-height:58px;font-size:1rem}
+.actions .btn{min-height:50px;padding:8px 14px;font-size:.92rem}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:var(--surface2);padding:6px;border-radius:16px;margin:8px 0 4px}
+.seg button{min-height:52px;border:0;border-radius:12px;background:transparent;font-weight:var(--wStrong);font-size:.9rem;cursor:pointer;color:var(--ink)}
+.seg button[aria-pressed=true]{background:var(--surface);color:var(--accent);box-shadow:var(--shadow)}
+
+/* ============ Add book ============ */
+.methods{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.method{border:2px solid var(--line);background:var(--surface);border-radius:16px;padding:14px 6px;min-height:110px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-weight:var(--wStrong);font-size:.9rem;cursor:pointer;text-align:center;color:var(--ink)}
+.method svg{width:36px;height:36px;color:var(--accent)}
+.method[aria-pressed=true]{border-color:var(--accent);background:var(--accentSoft)}
+.scanbox{position:relative;border-radius:16px;overflow:hidden;background:#111;aspect-ratio:4/3;margin-top:10px}
+.scanbox video{width:100%;height:100%;object-fit:cover;display:block}
+.scanbox .guide{position:absolute;left:12%;right:12%;top:35%;bottom:35%;border:4px solid var(--hl);border-radius:12px;box-shadow:0 0 0 999px rgba(0,0,0,.35)}
+#zxreader{width:100%}
+#zxreader video{border-radius:12px}
+.status{padding:12px 14px;border-radius:12px;background:var(--surface2);margin-top:10px;font-weight:var(--wStrong)}
+.status.err{background:var(--accentSoft);color:var(--danger)}
+.status.ok{background:var(--successSoft);color:var(--successInk)}
+.result{border-top:1px solid var(--line);padding:14px 0}
+.result:first-child{border-top:0}
+.note{background:var(--hl);border:1px dashed var(--hlStrong);border-radius:12px;padding:10px 12px;font-size:.88rem;color:var(--ink)}
+.photoPrev{display:flex;gap:14px;align-items:center;margin-top:10px}
+.spinner{display:inline-block;width:22px;height:22px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:sp 1s linear infinite;vertical-align:middle}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ============ Modal ============ */
+.overlay{position:fixed;inset:0;background:rgba(24,24,22,.55);z-index:50;display:none;align-items:flex-end;justify-content:center}
+.overlay.open{display:flex}
+.sheet{background:var(--bg);width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;padding:20px 18px 28px}
+@media (min-width:700px){.overlay{align-items:center}.sheet{border-radius:22px}}
+.sheet .x{float:right;min-height:48px;min-width:48px;border-radius:12px;border:2px solid var(--line);background:var(--surface);color:var(--ink);font-size:1.3rem;cursor:pointer}
+input[type=range]{width:100%;height:44px;accent-color:var(--green)}
+.prompt{background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--accent2);border-radius:12px;padding:14px;margin:10px 0;font-size:1.08rem}
+.recallCard{padding:14px 18px;background:var(--recallBg);color:var(--recallInk);border:2px solid var(--recallBorder)}
+.recallCard h3{font-size:1.3rem;margin:0}
+.recallCard .nudgeLine{font-size:1.05rem;margin:10px 0 14px}
+.recallCard .btn.big{width:100%;min-height:68px;font-size:1rem;padding:12px 8px;white-space:nowrap}
+.recallCard .meta2{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.recallCard .chip{background:var(--surface);border:1px solid var(--recallBorder);color:var(--ink);border-radius:99px;padding:6px 12px;font-size:.85rem;font-weight:var(--wStrong)}
+.recallCard .linkbtn{background:var(--surface);border:2px solid var(--accent);color:var(--accent);min-height:52px;width:100%;margin-top:10px}
+.rc-top{display:flex;gap:14px;align-items:center;margin-top:8px}
+.rc-top .cover{width:64px;height:96px}
+.stageTag{display:inline-block;font-size:.78rem;font-weight:var(--wStrong);padding:4px 12px;border-radius:99px;background:var(--accentSoft);color:var(--accent)}
+.qstep{font-weight:var(--wStrong);color:var(--muted);font-size:.9rem;margin:14px 0 6px}
+.dots{display:flex;gap:6px;margin-bottom:6px}.dots i{flex:1;height:8px;border-radius:9px;background:var(--surface2);box-shadow:inset 0 0 0 1px var(--line)}.dots i.on{background:var(--accent);box-shadow:none}
+.bigQ{background:var(--surface);border:2px solid var(--recallBorder);border-left-width:8px;border-radius:16px;padding:18px;font-size:1.3rem;line-height:1.4;font-family:var(--fHead);font-weight:var(--wQ);color:var(--ink);margin:8px 0 12px}
+textarea.jot{width:100%;min-height:110px;padding:12px 14px;border:2px solid var(--field);border-radius:12px;background:var(--surface);color:var(--ink);font-size:1.05rem;resize:vertical}
+textarea.jot:focus{border-color:var(--accent);outline:4px solid var(--focus);outline-offset:2px}
+.noteItem{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;margin:10px 0}
+.noteItem .q{font-weight:var(--wStrong);margin-bottom:4px}
+.noteItem .a{font-size:1.05rem;white-space:pre-wrap}
+.noteItem .when{font-size:.8rem;color:var(--muted);margin-bottom:6px}
+.celebrate{text-align:center;padding:10px 0}
+.celebrate .em{font-size:3.4rem}
+.voice{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--line);color:var(--ink);border-radius:12px;padding:10px 12px;font-size:.88rem}
+
+/* ============ Club ============ */
+.member{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.member:first-of-type{border-top:0}
+.avatar{flex:0 0 auto;width:52px;height:52px;border-radius:50%;display:grid;place-items:center;font-weight:var(--wStrong);color:var(--surface);font-size:1.1rem}
+.member .meta{flex:1}
+.chat{background:var(--surface2);border-radius:14px;padding:10px 12px;margin:8px 0}
+.chat b{color:var(--accent)}
+.banner{background:var(--surface2);border:2px dashed var(--field);color:var(--ink);border-radius:14px;padding:10px 14px;font-weight:var(--wStrong);margin-top:10px}
+.themes{display:grid;gap:10px}
+.themeBtn{display:flex;align-items:center;gap:14px;width:100%;min-height:72px;padding:12px 14px;border:2px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);text-align:left;cursor:pointer;font-size:1rem}
+.themeBtn[aria-pressed=true]{border:3px solid var(--accent);background:var(--accentSoft)}
+.themeBtn .sw{display:flex;flex:0 0 auto;border-radius:10px;overflow:hidden;border:1px solid var(--field)}
+.themeBtn .sw i{display:block;width:12px;height:44px}
+.fontBtn .aa{flex:0 0 56px;font-size:2rem;line-height:1;text-align:center;color:var(--ink)}
+.fontBtn .fs{display:block;font-size:.9rem;color:var(--ink2)}
+.themeBtn .tick{margin-left:auto;font-size:1.5rem;font-weight:var(--wStrong);color:var(--accent)}
+.toast{position:fixed;left:50%;bottom:calc(var(--navH) + 18px);transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:14px 20px;border-radius:14px;font-weight:var(--wStrong);z-index:60;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;text-align:center}
+.toast.show{opacity:1}
+.hide{display:none!important}
+.empty{text-align:center;padding:24px 10px;color:var(--muted)}
+footer.demo{margin-top:20px;text-align:center}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">📖</div>
+      <h1>Reading Buddy <small>(working title) · prototype</small></h1>
+    </div>
+    <span class="pill" title="This is a prototype with demo data">PROTOTYPE</span>
+  </header>
+
+  <!-- ===== DASHBOARD ===== -->
+  <section id="view-home" class="view" aria-label="Dashboard"></section>
+
+  <!-- ===== ADD ===== -->
+  <section id="view-add" class="view hide" aria-label="Add a book">
+    <h2>Add a book</h2>
+    <p class="muted">Choose how you'd like to find your book.</p>
+    <div class="methods" role="group" aria-label="How to add">
+      <button class="method" data-method="scan" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 8v8M10 8v8M13 8v8M16 8v8"/></svg>
+        Scan barcode</button>
+      <button class="method" data-method="photo" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l2-3h6l2 3h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="4"/></svg>
+        Photo of the cover</button>
+      <button class="method" data-method="search" aria-pressed="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+        Search or ISBN</button>
+    </div>
+
+    <!-- scan -->
+    <div id="m-scan" class="card hide">
+      <h3>Scan the barcode on the back</h3>
+      <p class="muted small">Hold the barcode inside the yellow box. Good light helps.</p>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="startScan">📷 Start camera</button>
+        <button class="btn ghost hide" id="stopScan">Stop</button>
+      </div>
+      <div class="scanbox hide" id="nativeBox"><video id="video" playsinline muted></video><div class="guide"></div></div>
+      <div id="zxreader" class="hide" style="margin-top:10px"></div>
+      <div id="scanStatus" class="status hide"></div>
+      <label class="f" for="barcodeFile">Or upload a photo of the barcode</label>
+      <input type="file" id="barcodeFile" accept="image/*" class="btn secondary block" style="padding:14px">
+      <div id="zxfile" class="hide"></div>
+    </div>
+
+    <!-- photo -->
+    <div id="m-photo" class="card hide">
+      <h3>Take a photo of the front cover</h3>
+      <input type="file" id="coverFile" accept="image/*" capture="environment" class="btn secondary block" style="padding:14px">
+      <div class="photoPrev hide" id="photoPrev">
+        <img id="photoImg" class="cover lg" alt="Your cover photo">
+        <div>
+          <p><b>Lovely – we'll use this photo as the cover.</b></p>
+          <p class="note">✨ Automatic cover recognition is coming. For now, type the title below and pick the right book.</p>
+        </div>
+      </div>
+      <label class="f" for="photoQuery">Book title (and author if you know it)</label>
+      <div class="row"><input type="search" id="photoQuery" placeholder="e.g. Rebecca du Maurier" style="flex:1 1 220px"><button class="btn" id="photoSearchBtn">Search</button></div>
+    </div>
+
+    <!-- search -->
+    <div id="m-search" class="card">
+      <h3>Search by title, author or ISBN</h3>
+      <label class="f" for="q">Title, author, or the ISBN number</label>
+      <input type="search" id="q" placeholder="e.g. Pride and Prejudice, or 9780141439518" enterkeyhint="search">
+      <p class="hint">The ISBN is the 13-digit number above the barcode, starting 978 or 979.</p>
+      <button class="btn block" id="searchBtn" style="margin-top:12px">🔍 Find my book</button>
+    </div>
+
+    <div id="resultsCard" class="card hide">
+      <h3 id="resultsTitle">Results</h3>
+      <div id="results"></div>
+    </div>
+
+    <div class="card">
+      <h3>Can't find it?</h3>
+      <p class="muted small">Add it yourself – you can type the details.</p>
+      <button class="btn secondary block" id="manualBtn">✍️ Add by hand</button>
+    </div>
+  </section>
+
+  <!-- ===== MY BOOKS ===== -->
+  <section id="view-books" class="view hide" aria-label="My books">
+    <h2>My books</h2>
+    <div class="seg" role="group" aria-label="Filter">
+      <button data-filter="reading" aria-pressed="false">Reading</button>
+      <button data-filter="finished" aria-pressed="false">Finished</button>
+      <button data-filter="all" aria-pressed="true">All</button>
+    </div>
+    <div id="bookList"></div>
+  </section>
+
+  <!-- ===== CLUB ===== -->
+  <section id="view-club" class="view hide" aria-label="Book club"></section>
+</div>
+
+<nav class="tabs" aria-label="Main">
+  <div class="inner" role="tablist">
+    <button class="tab" role="tab" data-view="home" aria-selected="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/></svg>Home</button>
+    <button class="tab" role="tab" data-view="add" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>Add book</button>
+    <button class="tab" role="tab" data-view="books" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h7"/></svg>My books</button>
+    <button class="tab" role="tab" data-view="club" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5M15 15c3 0 6 1.6 6 5"/></svg>Book club</button>
+  </div>
+</nav>
+
+<div class="overlay" id="overlay" role="dialog" aria-modal="true"><div class="sheet" id="sheet"></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* =====================================================================
+   SETTINGS – easy to edit
+   ===================================================================== */
+const WORDS_PER_PAGE   = 275;      // estimated words = pages × this
+const WAR_AND_PEACE    = 587000;   // approx. words in War and Peace
+const DEFAULT_GOAL     = 12;       // books per year
+const STORE_KEY        = 'readingBuddy.v1';
+const HTML5QRCODE_CDN  = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
+
+/* ===================== colour themes ===================== */
+const THEME_KEY='readingBuddy.theme';
+const THEMES=[
+  {id:'charcoal',name:'Paper & Ink: Charcoal', rec:true, blurb:'Cream page, charcoal ink, a touch of muted gold', sw:['#F6F0E2','#FFFBF2','#1E1E1C','#2F2F2D','#9A8120']},
+  {id:'green',   name:'Paper & Ink: Green',    blurb:'Cream page, ink-black text, bottle-green like a cloth-bound classic', sw:['#F6F0E2','#FFFBF2','#1E1E1C','#1F4A3A','#F5E4B8']},
+  {id:'paper',   name:'Paper & Ink (original)', blurb:'The earlier version with brown text and oxblood buttons, for comparison', sw:['#F6F0E2','#FFFBF2','#231B14','#7A2E26','#F5E4B8']},
+];
+function currentTheme(){ try{ const t=localStorage.getItem(THEME_KEY); if(THEMES.some(x=>x.id===t)) return t; }catch(e){} return 'charcoal'; }
+function applyTheme(id){ document.documentElement.setAttribute('data-theme',id);
+  const m=document.querySelector('meta[name=theme-color]'); if(m) m.content=getComputedStyle(document.documentElement).getPropertyValue('--heroBg').trim(); }
+function setTheme(id){ try{ localStorage.setItem(THEME_KEY,id); }catch(e){} applyTheme(id); if(VIEW==='home') renderHome(); toast('Colours changed to '+THEMES.find(t=>t.id===id).name); }
+applyTheme(currentTheme());
+
+/* ===================== font styles ===================== */
+const FONT_KEY='readingBuddy.font';
+const FONTS=[
+  {id:'editorial',name:'Editorial', rec:true, head:'"Source Serif 4",Georgia,serif', body:'"IBM Plex Sans",sans-serif', blurb:'Source Serif headings, IBM Plex Sans text'},
+  {id:'classic',  name:'Classic',  head:'"Literata",Georgia,serif', body:'"InterVariable","Inter",sans-serif', blurb:'Literata book headings, Inter text'},
+  {id:'modern',   name:'Modern',             head:'"InterVariable","Inter",sans-serif', body:'"InterVariable","Inter",sans-serif', blurb:'Inter throughout, clean and plain'},
+];
+function currentFont(){ try{ const t=localStorage.getItem(FONT_KEY); if(FONTS.some(x=>x.id===t)) return t; }catch(e){} return 'editorial'; }
+function applyFont(id){ document.documentElement.setAttribute('data-font',id); }
+function setFont(id){ try{ localStorage.setItem(FONT_KEY,id); }catch(e){} applyFont(id); if(VIEW==='home') renderHome(); toast('Lettering changed to '+FONTS.find(t=>t.id===id).name); }
+applyFont(currentFont());
+
+/* ===================== helpers ===================== */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nf = n => Math.round(n).toLocaleString('en-GB');
+const pad = n => String(n).padStart(2,'0');
+const isoDay = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const today = () => isoDay(new Date());
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate()+n); return x; };
+const fmtDate = s => s ? new Date(s+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '';
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const uid = () => Math.random().toString(36).slice(2,10);
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2600); }
+function words(b){ return b.wordsOverride ? +b.wordsOverride : (+b.pages||0) * WORDS_PER_PAGE; }
+function bigWords(n){
+  if (n >= 1e6) return (n/1e6).toFixed(n>=1e7?0:1).replace(/\.0$/,'') + ' million';
+  if (n >= 1e4) return nf(Math.round(n/1000)*1000);
+  return nf(n);
+}
+
+/* ===================== demo seed ===================== */
+function seed(){
+  const Y = new Date().getFullYear();
+  const d = (m,day) => `${Y}-${pad(m)}-${pad(day)}`;
+  const ol = isbn => `https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg`;
+  const oid = id => `https://covers.openlibrary.org/b/id/${id}-M.jpg`;
+  const books = [
+    {title:'Pride and Prejudice', author:'Jane Austen', isbn:'9780141439518', cover:ol('9780141439518'), pages:435, status:'finished', startDate:d(1,3), finishDate:d(1,24)},
+    {title:'Rebecca', author:'Daphne du Maurier', isbn:'', cover:oid(8238729), pages:448, status:'finished', startDate:d(2,1), finishDate:d(2,26)},
+    {title:'The Remains of the Day', author:'Kazuo Ishiguro', isbn:'9780571258246', cover:ol('9780571258246'), pages:258, status:'finished', startDate:d(3,10), finishDate:d(3,28)},
+    {title:'Where the Crawdads Sing', author:'Delia Owens', isbn:'', cover:oid(8362947), pages:384, status:'finished', startDate:d(4,8), finishDate:d(5,6)},
+    {title:'The Thursday Murder Club', author:'Richard Osman', isbn:'9780241425442', cover:ol('9780241425442'), pages:400, status:'finished', startDate:d(6,2), finishDate:d(6,21)},
+    {title:'A Gentleman in Moscow', author:'Amor Towles', isbn:'9780099558781', cover:ol('9780099558781'), pages:462, status:'finished', startDate:d(7,14), finishDate:d(8,19)},
+    {title:'Lessons in Chemistry', author:'Bonnie Garmus', isbn:'', cover:oid(12725772), pages:400, status:'finished', startDate:d(8,25), finishDate:d(9,18)},
+    {title:'Wolf Hall', author:'Hilary Mantel', isbn:'9780007230204', cover:ol('9780007230204'), pages:653, status:'reading', startDate:d(9,22), finishDate:'', currentPage:412},
+  ].map(b => ({id:uid(), demo:true, wordsOverride:null, currentPage:b.status==='finished'?b.pages:0, ...b}));
+  // reading log: an 11-day streak ending today, plus scattered earlier days
+  const log = [];
+  for (let i=0;i<11;i++) log.push(isoDay(addDays(new Date(),-i)));
+  for (let i=13;i<60;i+= (i%3?2:1)) log.push(isoDay(addDays(new Date(),-i)));
+  const wolf = books.find(b=>b.title==='Wolf Hall');
+  return {books, log, goal:DEFAULT_GOAL, seeded:true, recalls:demoRecall(wolf)};
+}
+function demoRecall(wolf){
+  // a small, demo-marked recall note on Wolf Hall, plus a short recall history
+  const d1=isoDay(addDays(new Date(),-3)), d0=isoDay(addDays(new Date(),-12));
+  wolf.notes = [
+    {date:d0, page:190, q:'Who are the main people in Wolf Hall so far?', a:'Thomas Cromwell – a blacksmith\'s son turned lawyer. Cardinal Wolsey, his boss. King Henry wants to be rid of Katherine.', demo:true},
+    {date:d1, page:380, q:'Who are you rooting for at page 380, and why?', a:'Cromwell, oddly! He\'s clever and kind to his family, even if he\'s ruthless at court.', demo:true},
+    {date:d1, page:380, q:'What do you think will happen next?', a:'Anne Boleyn will finally become queen. Thomas More is heading for trouble.', demo:true},
+  ];
+  return [{bookId:wolf.id, date:d0, page:190, count:2, demo:true},{bookId:wolf.id, date:d1, page:380, count:3, demo:true}];
+}
+let S;
+function load(){
+  try{ S = JSON.parse(localStorage.getItem(STORE_KEY)); }catch(e){ S=null; }
+  if(!S||!S.books) { S = seed(); save(); return; }
+  if(!S.recalls){ // upgrade data saved by the earlier prototype
+    S.recalls=[]; const w=S.books.find(b=>b.demo&&b.title==='Wolf Hall'&&!b.notes); if(w) S.recalls=demoRecall(w); save();
+  }
+}
+function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(S)); }catch(e){ console.warn('Could not save', e); } }
+function logToday(){ const t=today(); if(!S.log.includes(t)) S.log.push(t); }
+function streak(){
+  const set = new Set(S.log); let d = new Date(); let n = 0;
+  if (!set.has(isoDay(d))) d = addDays(d,-1);   // streak still alive if you read yesterday
+  while (set.has(isoDay(d))) { n++; d = addDays(d,-1); }
+  return n;
+}
+
+/* ===================== covers ===================== */
+function coverHTML(b, cls='cover'){
+  if (!b.cover) return `<div class="${cls} ph" aria-hidden="true">${esc(b.title)}</div>`;
+  return `<img class="${cls}" src="${esc(b.cover)}" alt="Cover of ${esc(b.title)}" loading="lazy" data-title="${esc(b.title)}" onerror="coverFail(this)">`;
+}
+function coverFail(img){
+  // retry once (the free cover service is sometimes slow), then show a neat placeholder
+  if(!img.dataset.retried && /^https?:/.test(img.src)){ img.dataset.retried='1'; const u=img.src; setTimeout(()=>{ img.src=u+(u.includes('?')?'&':'?')+'r=1'; },1200); return; }
+  const d=document.createElement('div'); d.className=img.className+' ph'; d.textContent=img.dataset.title||'Book'; img.replaceWith(d); }
+
+/* ===================== navigation ===================== */
+let VIEW='home';
+function go(v){
+  VIEW=v;
+  $$('.view').forEach(s=>s.classList.toggle('hide', s.id!=='view-'+v));
+  $$('.tab').forEach(t=>t.setAttribute('aria-selected', t.dataset.view===v));
+  if (v!=='add') stopScan();
+  render(); window.scrollTo(0,0);
+}
+$$('.tab').forEach(t=>t.onclick=()=>go(t.dataset.view));
+function render(){ if(VIEW==='home') renderHome(); if(VIEW==='books') renderBooks(); if(VIEW==='club') renderClub(); }
+
+/* ===================== DASHBOARD ===================== */
+function renderHome(){
+  const Y = new Date().getFullYear(), ys = String(Y);
+  const finished = S.books.filter(b=>b.status==='finished' && (b.finishDate||'').startsWith(ys));
+  const reading  = S.books.filter(b=>b.status==='reading');
+  const inProgPages = reading.reduce((a,b)=>a+(+b.currentPage||0),0);
+  const inProgWords = reading.reduce((a,b)=>a+ (b.pages? words(b)*(+b.currentPage||0)/b.pages : 0),0);
+  const wYear = finished.reduce((a,b)=>a+words(b),0) + inProgWords;
+  const pYear = finished.reduce((a,b)=>a+(+b.pages||0),0) + inProgPages;
+  const wp = wYear / WAR_AND_PEACE;
+  const st = streak();
+  const goal = S.goal||DEFAULT_GOAL, pct = Math.min(1, finished.length/goal);
+  const C = 2*Math.PI*50;
+  const monthly = Array(12).fill(0); finished.forEach(b=>monthly[+b.finishDate.slice(5,7)-1]+=words(b));
+  const maxM = Math.max(...monthly, 1), curM = new Date().getMonth();
+  const hour = new Date().getHours();
+  const hello = hour<12?'Good morning':hour<18?'Good afternoon':'Good evening';
+  const set = new Set(S.log);
+  const last7 = [...Array(7)].map((_,i)=>addDays(new Date(),i-6));
+  const comp = wp >= 1 ? `That's about <b>${wp.toFixed(1).replace(/\.0$/,'')} times</b> the length of <i>War and Peace</i>! 📚`
+                       : `That's about <b>${Math.round(wp*100)}%</b> of the way through <i>War and Peace</i>.`;
+
+  $('#view-home').innerHTML = `
+    <h2 style="margin:4px 0 6px">${hello} 👋</h2>
+    ${S.seeded?`<div class="banner small" style="padding:8px 12px">📌 <b>Demo books</b> – reset at the bottom.</div>`:''}
+    <div class="card hero">
+      <div class="lbl">In ${Y} you've read approx.</div>
+      <div class="big">${bigWords(wYear)} words</div>
+      <div class="lbl small" title="Includes pages read in books you are still reading">Based on ${WORDS_PER_PAGE} words a page.</div>
+      <div class="fun">${comp}</div>
+    </div>
+    ${recallCardHTML()}
+    <div class="stats">
+      <div class="stat"><div class="n">${finished.length}</div><div class="t">books finished</div></div>
+      <div class="stat"><div class="n">${nf(pYear)}</div><div class="t">pages read</div></div>
+      <div class="stat"><div class="n">${st}🔥</div><div class="t">day streak</div></div>
+    </div>
+
+    ${reading.map(b=>{ const p=b.pages?Math.round(100*(b.currentPage||0)/b.pages):0; return `
+    <div class="card">
+      <h3>📖 Currently reading</h3>
+      <div class="current">${coverHTML(b)}
+        <div class="meta" style="flex:1">
+          <div class="title serif" style="font-size:1.1rem">${esc(b.title)}</div>
+          <div class="muted">${esc(b.author)}</div>
+          <div class="progress" aria-label="${p}% read"><i style="width:${p}%"></i></div>
+          <div class="small"><b>Page ${b.currentPage||0} of ${b.pages||'?'}</b> · ${p}%</div>
+          <button class="btn green" style="margin-top:10px;min-height:52px" onclick="openEdit('${b.id}', true)">Update my page</button>
+        </div>
+      </div>
+    </div>`}).join('') || `<div class="card"><h3>📖 Currently reading</h3><p class="muted">Nothing on the go. <a href="#" onclick="go('add');return false">Add a book</a> to start.</p></div>`}
+
+    <div class="card">
+      <h3>🔥 Reading streak: ${st} day${st===1?'':'s'}</h3>
+      <p class="muted small">Your last 7 days</p>
+      <div class="streak">${last7.map(d=>`<span class="${set.has(isoDay(d))?'on':''}">${d.toLocaleDateString('en-GB',{weekday:'short'}).slice(0,2)}</span>`).join('')}</div>
+      <button class="btn secondary block" style="margin-top:12px" onclick="readToday()">${set.has(today())?'✅ You read today – well done':'I read today'}</button>
+    </div>
+
+    <div class="card">
+      <h3>🎯 ${Y} goal</h3>
+      <div class="goal">
+        <div class="ring">
+          <svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="var(--surface2)" stroke-width="14"/>
+          <circle cx="60" cy="60" r="50" fill="none" stroke="var(--green)" stroke-width="14" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-pct)}"/></svg>
+          <div class="c"><div><b>${finished.length}/${goal}</b><span class="small">books</span></div></div>
+        </div>
+        <div>
+          <p><b>${finished.length>=goal?'Goal reached – brilliant! 🎉':`${goal-finished.length} more to reach your goal`}</b></p>
+          <div class="row" style="gap:8px;margin-top:8px">
+            <button class="btn ghost" style="min-width:56px" aria-label="Lower goal" onclick="setGoal(-1)">−</button>
+            <button class="btn ghost" style="min-width:56px" aria-label="Raise goal" onclick="setGoal(1)">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>📊 Words finished each month (approx.)</h3>
+      <div class="bars" role="img" aria-label="Bar chart of approximate words finished per month">
+        ${monthly.map((w,i)=>`<div class="bar"><div class="v">${w?Math.round(w/1000)+'k':''}</div><div class="b ${i===curM?'now':''}" style="height:${Math.max(2,82*w/maxM)}%"></div><div class="m">${MONTHS[i][0]}</div></div>`).join('')}
+      </div>
+      <p class="muted small" style="margin-top:8px">Counted in the month you finished each book. k = thousand words. The <b>lighter, outlined bar</b> is this month.</p>
+    </div>
+
+    <div class="card" id="themeCard">
+      <h3>🎨 Colours</h3>
+      <p class="muted small" style="margin-top:0">Pick the one that's easiest on your eyes. All three are tested for strong contrast.</p>
+      <div class="themes" role="group" aria-label="Colour theme">
+        ${THEMES.map(t=>`<button class="themeBtn" data-theme-pick="${t.id}" aria-pressed="${currentTheme()===t.id}" onclick="setTheme('${t.id}')">
+          <span class="sw" aria-hidden="true">${t.sw.map(c=>`<i style="background:${c}"></i>`).join('')}</span>
+          <span><b>${t.name}</b>${t.rec?' <span class="tag demo">Recommended</span>':''}<br><span class="small muted">${t.blurb}</span></span>
+          <span class="tick" aria-hidden="true">${currentTheme()===t.id?'✓':''}</span></button>`).join('')}
+      </div>
+    </div>
+
+    <div class="card" id="fontCard">
+      <h3>🔤 Lettering</h3>
+      <p class="muted small" style="margin-top:0">Choose the style of lettering you find easiest to read.</p>
+      <div class="themes" role="group" aria-label="Font style">
+        ${FONTS.map(f=>`<button class="themeBtn fontBtn" data-font-pick="${f.id}" aria-pressed="${currentFont()===f.id}" onclick="setFont('${f.id}')">
+          <span class="aa" aria-hidden="true" style='font-family:${f.head};font-weight:600'>Aa</span>
+          <span><b style='font-family:${f.head};font-weight:600'>${f.name}</b>${f.rec?' <span class="tag demo">Recommended</span>':''}<span class="fs" style='font-family:${f.body}'>${f.blurb}</span></span>
+          <span class="tick" aria-hidden="true">${currentFont()===f.id?'✓':''}</span></button>`).join('')}
+      </div>
+    </div>
+
+    <footer class="demo card">
+      <p class="small muted">Demo books are marked “Demo”. Your own books are saved on this device only. Reset also restores the default colours and lettering.</p>
+      <button class="btn ghost block" onclick="resetDemo()">↺ Reset demo data</button>
+    </footer>`;
+}
+function readToday(){ logToday(); save(); renderHome(); toast('Lovely – reading logged for today'); }
+function setGoal(d){ S.goal=Math.max(1,(S.goal||DEFAULT_GOAL)+d); save(); renderHome(); }
+function resetDemo(){ if(!confirm('Reset to the demo books? This removes any books you have added on this device.')) return; S=seed(); save(); try{ localStorage.removeItem(THEME_KEY); localStorage.removeItem(FONT_KEY); }catch(e){} applyTheme(currentTheme()); applyFont(currentFont()); go('home'); toast('Demo data, colours and lettering restored'); }
+
+/* ===================== MY BOOKS ===================== */
+let FILTER='all';
+$$('.seg button').forEach(b=>b.onclick=()=>{FILTER=b.dataset.filter; $$('.seg button').forEach(x=>x.setAttribute('aria-pressed',x===b)); renderBooks();});
+function renderBooks(){
+  let list = S.books.filter(b=>FILTER==='all'||b.status===FILTER);
+  list.sort((a,b)=> (a.status==='reading'?-1:0)-(b.status==='reading'?-1:0) || (b.finishDate||b.startDate||'').localeCompare(a.finishDate||a.startDate||''));
+  $('#bookList').innerHTML = list.length ? list.map(b=>{
+    const p=b.pages?Math.round(100*(b.currentPage||0)/b.pages):0;
+    return `<div class="card"><div class="book">
+      ${coverHTML(b)}
+      <div class="meta">
+        <div class="title">${esc(b.title)}</div>
+        <div class="author">${esc(b.author||'Unknown author')}</div>
+        <div class="tagrow">
+          ${b.status==='finished'?'<span class="tag fin">✓ Finished</span>':'<span class="tag rd">Reading</span>'}
+          ${b.demo?'<span class="tag demo">Demo</span>':''}
+        </div>
+        <div class="small">${b.pages?nf(b.pages)+' pages':'Pages unknown'} · approx. ${nf(words(b))} words${b.wordsOverride?' (your figure)':''}</div>
+        <div class="small muted">${b.startDate?'Started '+fmtDate(b.startDate):''}${b.finishDate?' · Finished '+fmtDate(b.finishDate):''}</div>
+        ${b.status==='reading'?`<div class="progress"><i style="width:${p}%"></i></div><div class="small"><b>Page ${b.currentPage||0} of ${b.pages||'?'}</b> · ${p}%</div>`:''}
+      </div></div>
+        <div class="actions bookActions">
+          <button class="btn" onclick="openRecall('${b.id}')">🧠 Remember${b.status==='reading'?' so far':' the story'}</button>
+          ${b.status==='reading'?`<button class="btn green" onclick="openEdit('${b.id}',true)">Update page</button>`:''}
+          <button class="btn secondary" onclick="openEdit('${b.id}')">✏️ Edit</button>
+          ${(b.notes||[]).length?`<button class="btn secondary" style="${b.status==='reading'?'grid-column:1/-1':''}" onclick="openNotes('${b.id}')">📝 My recall notes (${b.notes.length})</button>`:''}
+        </div></div>`}).join('') : `<div class="card empty">No books here yet.<br><button class="btn" style="margin-top:12px" onclick="go('add')">Add a book</button></div>`;
+}
+
+/* ===================== EDIT / ADD SHEET ===================== */
+function openSheet(html){ $('#sheet').innerHTML=html; $('#overlay').classList.add('open'); document.body.style.overflow='hidden'; setTimeout(()=>{const f=$('#sheet .x'); f&&f.focus();},50); }
+function closeSheet(){ $('#overlay').classList.remove('open'); document.body.style.overflow=''; }
+$('#overlay').addEventListener('click',e=>{ if(e.target.id==='overlay') closeSheet(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeSheet(); });
+
+let DRAFT=null;
+function openEdit(id, quick=false){
+  const b = S.books.find(x=>x.id===id); if(!b) return;
+  DRAFT = {...b, _new:false}; showEdit(quick);
+}
+function openNew(data){
+  DRAFT = {id:uid(), demo:false, title:'', author:'', isbn:'', cover:'', pages:'', wordsOverride:null, status:'reading', startDate:today(), finishDate:'', currentPage:0, ...data, _new:true};
+  if (PHOTO && !data.cover) DRAFT.cover = PHOTO; // photo of the cover wins if user took one
+  if (PHOTO && data._usePhoto) DRAFT.cover = PHOTO;
+  showEdit(false);
+}
+function showEdit(quick){
+  const b = DRAFT;
+  openSheet(`
+    <button class="x" onclick="closeSheet()" aria-label="Close">✕</button>
+    <h2 style="margin-top:4px">${b._new?'Add this book':quick?'Update my page':'Edit book'}</h2>
+    <div class="book" style="margin:10px 0">${coverHTML(b,'cover lg')}
+      <div class="meta">
+        ${quick?`<div class="title">${esc(b.title)}</div><div class="author">${esc(b.author)}</div>`:`
+        <label class="f" for="e-title" style="margin-top:0">Title</label><input type="text" id="e-title" value="${esc(b.title)}">
+        <label class="f" for="e-author">Author</label><input type="text" id="e-author" value="${esc(b.author)}">`}
+      </div>
+    </div>
+    ${quick?'':`
+    <label class="f">Status</label>
+    <div class="seg" style="grid-template-columns:1fr 1fr" role="group">
+      <button type="button" data-st="reading" aria-pressed="${b.status==='reading'}" onclick="setSt('reading')">📖 Reading</button>
+      <button type="button" data-st="finished" aria-pressed="${b.status==='finished'}" onclick="setSt('finished')">✓ Finished</button>
+    </div>
+    <div class="grid2">
+      <div><label class="f" for="e-pages">Pages</label><input type="number" inputmode="numeric" min="0" id="e-pages" value="${esc(b.pages)}" oninput="updWords()"></div>
+      <div><label class="f" for="e-words">Words (approx.)</label><input type="number" inputmode="numeric" min="0" id="e-words" value="${b.wordsOverride||''}" placeholder="${nf(words(b))}" oninput="updWords()"></div>
+    </div>
+    <p class="hint" id="e-wordhint"></p>
+    <div class="grid2">
+      <div><label class="f" for="e-start">Started</label><input type="date" id="e-start" value="${esc(b.startDate)}"></div>
+      <div id="finWrap"><label class="f" for="e-finish">Finished</label><input type="date" id="e-finish" value="${esc(b.finishDate)}"></div>
+    </div>`}
+    <div id="progWrap">
+      <label class="f" for="e-page">Which page are you on? <span id="e-pageout" style="color:var(--successInk)"></span></label>
+      <input type="range" id="e-page" min="0" max="${b.pages||500}" value="${b.currentPage||0}" oninput="updPage()">
+      <div class="row" style="gap:8px">
+        <button class="btn ghost" onclick="nudge(-10)">−10</button><button class="btn ghost" onclick="nudge(-1)">−1</button>
+        <button class="btn ghost" onclick="nudge(1)">+1</button><button class="btn ghost" onclick="nudge(10)">+10</button>
+      </div>
+    </div>
+    <button class="btn green block" style="margin-top:18px" onclick="saveDraft()">${b._new?'➕ Add to my books':'💾 Save'}</button>
+    ${(!b._new&&!quick)?`<button class="btn ghost block" style="margin-top:10px;color:var(--danger)" onclick="delBook()">🗑 Remove this book</button>`:''}
+  `);
+  if(!quick){ setSt(b.status); updWords(); }
+  updPage();
+}
+function setSt(s){ DRAFT.status=s; $$('#sheet [data-st]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.st===s));
+  const fw=$('#finWrap'); if(fw) fw.style.visibility = s==='finished'?'visible':'hidden';
+  if(s==='finished' && $('#e-finish') && !$('#e-finish').value) $('#e-finish').value=today();
+  $('#progWrap').classList.toggle('hide', s==='finished'); }
+function updWords(){
+  const p=+$('#e-pages').value||0, w=$('#e-words');
+  w.placeholder = nf(p*WORDS_PER_PAGE);
+  $('#e-wordhint').textContent = w.value ? 'Using your word count.' : `Approx. ${nf(p*WORDS_PER_PAGE)} words (${p} pages × ${WORDS_PER_PAGE}). Type your own figure if you know better.`;
+  const r=$('#e-page'); if(p){ r.max=p; } updPage();
+}
+function updPage(){ const r=$('#e-page'); if(!r) return; $('#e-pageout').textContent = `page ${r.value} of ${r.max}`; }
+function nudge(n){ const r=$('#e-page'); r.value=Math.min(+r.max,Math.max(0,+r.value+n)); updPage(); }
+function saveDraft(){
+  const b=DRAFT;
+  if($('#e-title')){ b.title=$('#e-title').value.trim()||'Untitled'; b.author=$('#e-author').value.trim(); }
+  if($('#e-pages')){ b.pages=+$('#e-pages').value||0; b.wordsOverride=+$('#e-words').value||null; b.startDate=$('#e-start').value; b.finishDate=b.status==='finished'?($('#e-finish').value||today()):''; }
+  const prev = S.books.find(x=>x.id===b.id);
+  const prevPage = prev ? (+prev.currentPage||0) : 0;
+  b.currentPage = b.status==='finished' ? (b.pages||0) : (+$('#e-page').value||0);
+  if(b.status==='reading' && b.pages && b.currentPage>=b.pages && confirm('That\'s the last page! Mark this book as finished?')){ b.status='finished'; b.finishDate=today(); }
+  if(!prev || prev.currentPage!==b.currentPage || b.status==='finished') logToday();
+  const isNew=b._new; delete b._new;
+  if(prev) Object.assign(prev,b); else S.books.push(b);
+  save(); closeSheet(); PHOTO=null;
+  if(isNew){ toast('Added to your books 📚'); resetAdd(); go('books'); return; }
+  render();
+  if(prev && b.status==='reading' && shouldNudge(prevPage, b.currentPage, b.pages)) progressNudge(prev);
+  else toast('Saved');
+}
+function delBook(){ if(!confirm('Remove this book from your list?')) return; S.books=S.books.filter(x=>x.id!==DRAFT.id); save(); closeSheet(); render(); toast('Book removed'); }
+
+/* ===================== REMEMBER THE STORY ===================== */
+// Spoiler-safe, progress-aware example questions. {title} and {page} are filled in.
+// In the full product the voice companion would ask these (and book-specific ones) in conversation.
+const RECALL_QS_PER_SESSION = 3;
+const QSETS = {
+  early: { label:'Early days', blurb:'Getting to know the people and the place', qs:[
+    'Who have you met so far in {title}? Tell me a little about them.',
+    'Where and when is {title} set? Can you picture it?',
+    'What are your first impressions of the main character?',
+    'How does the book make you feel so far, at page {page}?',
+    'What has happened in the opening chapters, in your own words?',
+    'Is there anyone so far you already like – or don\'t trust?',
+  ]},
+  middle: { label:'In the thick of it', blurb:'What has happened, and where it might go', qs:[
+    'What are the main things that have happened so far, up to page {page}?',
+    'Who are you rooting for at page {page}, and why?',
+    'What do you think will happen next in {title}?',
+    'Has anyone surprised you so far? What did they do?',
+    'Which scene so far has stayed with you most?',
+    'Is there a mystery or problem the characters are trying to solve?',
+  ]},
+  late: { label:'Nearly there', blurb:'Looking back, and guessing the ending', qs:[
+    'How do you think {title} is going to end?',
+    'How has the main character changed since the start of the book?',
+    'What loose ends still need tying up, at page {page}?',
+    'Who has changed your mind about them as you\'ve read on?',
+    'What has been the biggest turning point so far?',
+    'If you could warn one character about something, what would you say?',
+  ]},
+  finished: { label:'Finished', blurb:'The ending and the whole story', qs:[
+    'How did {title} end? Tell it in your own words.',
+    'What was your favourite moment in the whole book?',
+    'What would you tell a friend about {title}?',
+    'Who was your favourite character, and why?',
+    'Did the ending surprise you, or did you see it coming?',
+    'Would you read it again – or another book by this author?',
+  ]},
+};
+function pctOf(b){ return b.pages ? Math.round(100*Math.min(b.currentPage||0,b.pages)/b.pages) : 0; }
+function stageOf(b){ if(b.status==='finished') return 'finished'; const p=pctOf(b); return p<25?'early':p<=75?'middle':'late'; }
+function fillQ(q,b){ return q.replace(/\{title\}/g,'“'+b.title+'”').replace(/\{page\}/g, b.currentPage||0); }
+function recallsFor(id){ return (S.recalls||[]).filter(r=>r.bookId===id).sort((a,b)=>b.date.localeCompare(a.date)); }
+function recallStreakWeeks(){ // consecutive weeks (Mon–Sun) with at least one recall, ending this week or last
+  const wk = d => { const x=new Date(d+'T12:00:00'); x.setDate(x.getDate()-((x.getDay()+6)%7)); return isoDay(x); };
+  const set=new Set((S.recalls||[]).map(r=>wk(r.date))); let d=new Date(wk(today())+'T12:00:00'), n=0;
+  if(!set.has(isoDay(d))) d=addDays(d,-7);
+  while(set.has(isoDay(d))){ n++; d=addDays(d,-7); } return n;
+}
+function relDay(s){ const days=Math.round((new Date(today()+'T12:00:00')-new Date(s+'T12:00:00'))/864e5); return days===0?'today':days===1?'yesterday':days<7?days+' days ago':fmtDate(s); }
+
+function recallCardHTML(){
+  const reading=S.books.filter(b=>b.status==='reading');
+  let b = reading.sort((a,c)=>pctOf(c)-pctOf(a))[0];
+  let fin=false;
+  if(!b){ b=S.books.filter(x=>x.status==='finished').sort((a,c)=>(c.finishDate||'').localeCompare(a.finishDate||''))[0]; fin=true; }
+  if(!b) return '';
+  const last=recallsFor(b.id)[0], wk=recallStreakWeeks(), n=(b.notes||[]).length;
+  const line = fin ? `You finished <b>${esc(b.title)}</b> ${relDay(b.finishDate)}. A quick <span style="white-space:nowrap">2-minute</span> chat helps the story stay with you.`
+                   : `You're <b>${pctOf(b)}%</b> through <b>${esc(b.title)}</b> (p.&nbsp;${b.currentPage||0}). A <span style="white-space:nowrap">2-minute</span> chat helps you remember more.`;
+  return `<div class="card recallCard" id="recallCard">
+    <h3>🧠 Remember the story</h3>
+    <div class="rc-top">${coverHTML(b)}<p class="nudgeLine" style="margin:0">${line}</p></div>
+    <p class="small" style="opacity:.9;margin:6px 0 8px">No spoilers – only what you've read.</p>
+    <button class="btn big" onclick="openRecall('${b.id}')">🧠 Remember the story ${fin?'':'so far'}</button>
+    <div class="meta2">
+      <span class="chip">🕒 Last recall: ${last?relDay(last.date):'not yet'}</span>
+      ${wk?`<span class="chip">⭐ Recall streak: ${wk} week${wk===1?'':'s'}</span>`:''}
+    </div>
+    ${n?`<button class="btn linkbtn" onclick="openNotes('${b.id}')">📝 My recall notes (${n})</button>`:''}
+  </div>`;
+}
+
+let R=null; // the current recall session
+function openRecall(id){
+  const b=S.books.find(x=>x.id===id); if(!b) return;
+  const st=stageOf(b); const pool=[...QSETS[st].qs];
+  // first visit: the first few in order; later visits: a shuffle, so it feels fresh
+  const qs = recallsFor(id).length ? pool.sort(()=>Math.random()-.5).slice(0,RECALL_QS_PER_SESSION) : pool.slice(0,RECALL_QS_PER_SESSION);
+  R={id, st, qs, i:0, answers:Array(qs.length).fill(''), used:new Set(qs)};
+  showQ();
+}
+function recallHead(b){
+  return `<button class="x" onclick="closeSheet()" aria-label="Close">✕</button>
+    <h2 style="margin-top:4px">Remember the story</h2>
+    <div class="book" style="margin:8px 0 10px">${coverHTML(b,'cover sm')}<div class="meta"><div class="title">${esc(b.title)}</div><div class="author">${esc(b.author)}</div>
+      <div class="small muted" style="margin:4px 0">${b.status==='finished'?'Finished '+fmtDate(b.finishDate):`Page ${b.currentPage||0} of ${b.pages||'?'} · ${pctOf(b)}%`}</div>
+      <span class="stageTag">${QSETS[stageOf(b)].label}</span></div></div>`;
+}
+function showQ(){
+  const b=S.books.find(x=>x.id===R.id), n=R.qs.length, last=R.i===n-1;
+  openSheet(`${recallHead(b)}
+    <div class="voice">🎙️ <span><b>Example</b> of what your voice companion would ask.${b.status==='reading'?' No spoilers.':''}</span></div>
+    <div class="qstep">Question ${R.i+1} of ${n}</div>
+    <div class="dots">${R.qs.map((_,k)=>`<i class="${k<=R.i?'on':''}"></i>`).join('')}</div>
+    <div class="bigQ" id="bigQ">${esc(fillQ(R.qs[R.i],b))}</div>
+    <label class="f" for="jot">Jot down your answer <span class="muted" style="font-weight:400">(optional)</span></label>
+    <textarea class="jot" id="jot" placeholder="A few words is plenty…">${esc(R.answers[R.i])}</textarea>
+    <button class="btn green block" style="margin-top:14px;min-height:64px;font-size:1.12rem" onclick="nextQ()">${last?'✓ Finish':'Next question →'}</button>
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-top:10px">
+      <button class="btn secondary" style="padding:10px 8px" onclick="swapQ()">🔀 Different question</button>
+      <button class="btn ghost" ${R.i?'':'disabled style="opacity:.45"'} onclick="prevQ()">← Back</button>
+    </div>`);
+}
+function keepAns(){ const t=$('#jot'); if(t) R.answers[R.i]=t.value.trim(); }
+function nextQ(){ keepAns(); if(R.i<R.qs.length-1){ R.i++; showQ(); } else finishRecall(); }
+function prevQ(){ keepAns(); if(R.i>0){ R.i--; showQ(); } }
+function swapQ(){
+  keepAns(); const pool=QSETS[R.st].qs.filter(q=>!R.used.has(q));
+  const next = pool.length ? pool[Math.floor(Math.random()*pool.length)] : QSETS[R.st].qs.filter(q=>!R.qs.includes(q))[0];
+  if(!next){ toast('That\'s all the example questions for now'); return; }
+  R.qs[R.i]=next; R.used.add(next); R.answers[R.i]=''; showQ();
+}
+function finishRecall(){
+  const b=S.books.find(x=>x.id===R.id), d=today(), page=b.currentPage||0;
+  b.notes=b.notes||[];
+  R.qs.forEach((q,k)=>{ if(R.answers[k]) b.notes.push({date:d,page,q:fillQ(q,b),a:R.answers[k]}); });
+  const count=R.qs.length, jotted=R.answers.filter(Boolean).length;
+  S.recalls=S.recalls||[]; S.recalls.push({bookId:b.id,date:d,page,count,notes:jotted});
+  logToday(); save(); render();
+  openSheet(`<button class="x" onclick="closeSheet()" aria-label="Close">✕</button>
+    <div class="celebrate"><div class="em">🌟</div>
+      <h2>Well done!</h2>
+      <p style="font-size:1.15rem">You've remembered <b>${count} things</b> about <b>${esc(b.title)}</b>${b.status==='reading'?` up to page ${page}`:''}.</p>
+      <p class="muted">${jotted?`${jotted} note${jotted===1?'':'s'} saved to your recall notes.`:'Next time, try jotting a few words down – it helps.'}</p>
+    </div>
+    ${(b.notes||[]).length?`<button class="btn block" onclick="openNotes('${b.id}')">📝 See my recall notes</button>`:''}
+    <button class="btn ghost block" style="margin-top:10px" onclick="closeSheet()">Back to reading</button>`);
+  R=null;
+}
+function openNotes(id){
+  const b=S.books.find(x=>x.id===id); if(!b) return;
+  const notes=[...(b.notes||[])].sort((a,c)=>c.date.localeCompare(a.date)||c.page-a.page);
+  openSheet(`<button class="x" onclick="closeSheet()" aria-label="Close">✕</button>
+    <h2 style="margin-top:4px">My recall notes</h2>
+    <div class="book" style="margin:8px 0 6px">${coverHTML(b)}<div class="meta"><div class="title">${esc(b.title)}</div><div class="author">${esc(b.author)}</div>
+      <div class="small muted">${notes.length} note${notes.length===1?'':'s'}</div></div></div>
+    ${notes.length?notes.map(n=>`<div class="noteItem"><div class="when">📅 ${fmtDate(n.date)} · page ${n.page}${n.demo?' · <span class="tag demo">Demo</span>':''}</div>
+      <div class="q">${esc(n.q)}</div><div class="a">${esc(n.a)}</div></div>`).join(''):`<p class="empty">No notes yet. Jot down an answer during a recall chat and it will appear here.</p>`}
+    <button class="btn block" style="margin-top:12px" onclick="openRecall('${b.id}')">🧠 Do a quick recall now</button>`);
+}
+function shouldNudge(from,to,pages){
+  if(!pages || to<=from) return false;
+  if(to-from>=50) return true;
+  return [25,50,75].some(t=>100*from/pages<t && 100*to/pages>=t);
+}
+function progressNudge(b){
+  openSheet(`<button class="x" onclick="closeSheet()" aria-label="Close">✕</button>
+    <div class="celebrate"><div class="em">📈</div><h2>Nice progress!</h2>
+    <p style="font-size:1.15rem">You're now on page <b>${b.currentPage}</b> of <b>${esc(b.title)}</b> – that's <b>${pctOf(b)}%</b>.</p>
+    <p>Want to do a quick recall? It takes about 2 minutes.</p></div>
+    <button class="btn green block" style="min-height:64px;font-size:1.12rem" onclick="openRecall('${b.id}')">🧠 Yes, let's remember</button>
+    <button class="btn ghost block" style="margin-top:10px" onclick="closeSheet()">Not now</button>`);
+}
+
+/* ===================== BOOK CLUB (mock) ===================== */
+function renderClub(){
+  const members=[
+    {n:'You', c:'var(--accent)', p:62, note:'Up to chapter 22'},
+    {n:'Margaret (sister)', c:'var(--success)', p:100, note:'Finished – no spoilers!'},
+    {n:'Grandad Tom', c:'var(--ink)', p:45, note:'Reading at bedtime'},
+    {n:'Auntie Jean', c:'var(--recallBorder)', p:80, note:'Loving Joyce'},
+    {n:'Priya (neighbour)', c:'var(--ink2)', p:20, note:'Just started'},
+  ];
+  const meet = addDays(new Date(), 9).toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+  $('#view-club').innerHTML = `
+    <h2>Book club</h2>
+    <div class="banner">🧪 SAMPLE DATA – this shows how a family &amp; friends club could work. No one is actually connected.</div>
+    <div class="card">
+      <p class="small muted" style="margin:0">The Sunday Readers · 5 members</p>
+      <h3 style="margin-top:6px">This month's book</h3>
+      <div class="book">${coverHTML({title:'The Thursday Murder Club',cover:'https://covers.openlibrary.org/b/isbn/9780241425442-M.jpg'})}
+        <div class="meta"><div class="title">The Thursday Murder Club</div><div class="author">Richard Osman</div>
+        <p class="small" style="margin-top:8px">📅 Next chat: <b>${meet}, 3pm</b><br>☕ At Margaret's, or by video call</p></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>How everyone is getting on</h3>
+      ${members.map(m=>`<div class="member"><div class="avatar" style="background:${m.c}">${m.n[0]}</div>
+        <div class="meta"><b>${esc(m.n)}</b><div class="progress" style="margin:4px 0"><i style="width:${m.p}%;background:${m.c}"></i></div><div class="small muted">${m.p}% · ${esc(m.note)}</div></div></div>`).join('')}
+    </div>
+    <div class="card">
+      <h3>Latest messages</h3>
+      <div class="chat"><b>Margaret:</b> Couldn't put it down! Elizabeth is my hero. 😄</div>
+      <div class="chat"><b>Grandad Tom:</b> Bit slow to start but it's picking up now.</div>
+      <div class="chat"><b>Auntie Jean:</b> Shall we do <i>The Man Who Died Twice</i> next?</div>
+    </div>
+    <div class="card">
+      <h3>Up next – vote</h3>
+      <div class="row" style="gap:8px">
+        <button class="btn secondary" onclick="toast('Vote noted (sample only)')">The Man Who Died Twice</button>
+        <button class="btn secondary" onclick="toast('Vote noted (sample only)')">Rebecca</button>
+        <button class="btn secondary" onclick="toast('Vote noted (sample only)')">The Salt Path</button>
+      </div>
+    </div>
+    <button class="btn block" onclick="toast('Inviting friends is coming in a later version')">➕ Invite a friend (coming soon)</button>`;
+}
+
+/* ===================== ADD: method switch ===================== */
+$$('.method').forEach(m=>m.onclick=()=>{
+  $$('.method').forEach(x=>x.setAttribute('aria-pressed',x===m));
+  ['scan','photo','search'].forEach(k=>$('#m-'+k).classList.toggle('hide',k!==m.dataset.method));
+  if(m.dataset.method!=='scan') stopScan();
+});
+function resetAdd(){ $('#resultsCard').classList.add('hide'); $('#results').innerHTML=''; $('#q').value=''; $('#photoQuery').value=''; $('#photoPrev').classList.add('hide'); $('#coverFile').value=''; $('#barcodeFile').value=''; }
+$('#manualBtn').onclick=()=>openNew({});
+
+/* ===================== LOOKUPS (live) ===================== */
+const cleanIsbn = s => String(s).replace(/[^0-9Xx]/g,'').toUpperCase();
+const looksIsbn = s => { const c=cleanIsbn(s); return (c.length===13 && /^97[89]/.test(c)) || c.length===10 && /^[0-9]{9}[0-9X]$/.test(c) && /^[\d\s-]+[Xx]?$/.test(s.trim()); };
+async function getJSON(url, ms=12000){
+  const ctl=new AbortController(); const t=setTimeout(()=>ctl.abort(),ms);
+  try{ const r=await fetch(url,{signal:ctl.signal}); if(!r.ok) throw new Error('HTTP '+r.status); return await r.json(); } finally{ clearTimeout(t); }
+}
+async function olByIsbn(isbn){
+  const ed = await getJSON(`https://openlibrary.org/isbn/${isbn}.json`);
+  let author='', pages=ed.number_of_pages||0, workKey=ed.works?.[0]?.key;
+  const aKeys = (ed.authors||[]).map(a=>a.key);
+  let work=null;
+  if(!aKeys.length && workKey){ try{ work=await getJSON(`https://openlibrary.org${workKey}.json`); (work.authors||[]).forEach(a=>a.author?.key&&aKeys.push(a.author.key)); }catch(e){} }
+  if(aKeys.length){ try{ const names=await Promise.all(aKeys.slice(0,2).map(k=>getJSON(`https://openlibrary.org${k}.json`).then(a=>a.name).catch(()=>''))); author=names.filter(Boolean).join(', '); }catch(e){} }
+  if(!pages && ed.pagination){ const m=String(ed.pagination).match(/\d{2,4}/g); if(m) pages=Math.max(...m.map(Number)); }
+  const cover = ed.covers?.[0]>0 ? `https://covers.openlibrary.org/b/id/${ed.covers[0]}-M.jpg` : `https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg?default=false`;
+  return [{title: ed.title + (ed.subtitle?': '+ed.subtitle:''), author, pages, isbn, cover, src:'Open Library'}];
+}
+async function gbSearch(q){
+  const j = await getJSON(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=10&printType=books`);
+  return (j.items||[]).map(it=>{ const v=it.volumeInfo||{}; const id=(v.industryIdentifiers||[]).find(x=>x.type==='ISBN_13')||(v.industryIdentifiers||[])[0];
+    return {title:v.title+(v.subtitle?': '+v.subtitle:''), author:(v.authors||[]).join(', '), pages:v.pageCount||0, isbn:id?.identifier||'', cover:(v.imageLinks?.thumbnail||v.imageLinks?.smallThumbnail||'').replace('http://','https://'), src:'Google Books', year:(v.publishedDate||'').slice(0,4)}; });
+}
+async function olSearch(q){
+  const j = await getJSON(`https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&limit=10&fields=key,title,author_name,cover_i,number_of_pages_median,isbn,first_publish_year`);
+  return (j.docs||[]).map(d=>({title:d.title, author:(d.author_name||[]).slice(0,2).join(', '), pages:d.number_of_pages_median||0,
+    isbn:(d.isbn||[]).find(x=>x.length===13&&/^978/.test(x))||(d.isbn||[])[0]||'', cover:d.cover_i?`https://covers.openlibrary.org/b/id/${d.cover_i}-M.jpg`:'', year:d.first_publish_year||'', src:'Open Library'}));
+}
+let LAST=[];
+async function lookup(q, label){
+  q=q.trim(); if(!q){ toast('Please type a title, author or ISBN'); return; }
+  const card=$('#resultsCard'), out=$('#results'); card.classList.remove('hide');
+  $('#resultsTitle').textContent = label||'Results';
+  out.innerHTML = `<p><span class="spinner"></span> &nbsp;Looking that up…</p>`;
+  card.scrollIntoView({behavior:'smooth',block:'start'});
+  let res=[], errs=[];
+  try{
+    if(looksIsbn(q)){
+      const isbn=cleanIsbn(q);
+      try{ res=await olByIsbn(isbn); }catch(e){ errs.push('Open Library: '+e.message); }
+      if(!res.length || !res[0].pages){ try{ const g=await gbSearch('isbn:'+isbn); if(g.length){ if(res.length){ res[0].pages=res[0].pages||g[0].pages; res[0].author=res[0].author||g[0].author; } else res=g.slice(0,1); } }catch(e){ errs.push('Google Books: '+e.message); } }
+    } else {
+      try{ res=await olSearch(q); }catch(e){ errs.push('Open Library: '+e.message); }
+      if(!res.length){ try{ res=await gbSearch(q); }catch(e){ errs.push('Google Books: '+e.message); } }
+    }
+  }catch(e){ errs.push(e.message); }
+  LAST=res;
+  if(!res.length){
+    out.innerHTML = `<div class="status err">Sorry, we couldn't find that book${errs.length?' (the book service may be busy or you may be offline)':''}.</div>
+      <p class="small muted">Try fewer words, check the ISBN, or add it by hand.</p><button class="btn secondary block" onclick="openNew({title:${esc(JSON.stringify(looksIsbn(q)?'':q))}, isbn:${esc(JSON.stringify(looksIsbn(q)?cleanIsbn(q):''))}})">✍️ Add by hand</button>`;
+    if(errs.length) console.warn(errs);
+    return;
+  }
+  out.innerHTML = (PHOTO?`<p class="small muted">Your photo will be used as the cover.</p>`:'') + res.slice(0,8).map((r,i)=>`
+    <div class="result book">${coverHTML(PHOTO?{...r,cover:PHOTO}:r)}
+      <div class="meta"><div class="title">${esc(r.title)}</div><div class="author">${esc(r.author||'Unknown author')}</div>
+      <div class="small muted">${r.pages?nf(r.pages)+' pages · approx. '+nf(r.pages*WORDS_PER_PAGE)+' words':'Page count unknown – you can add it'}${r.year?' · '+r.year:''}</div>
+      ${r.isbn?`<div class="small muted">ISBN ${esc(r.isbn)}</div>`:''}
+      <button class="btn" style="margin-top:8px;min-height:52px" onclick="pick(${i})">➕ This is my book</button></div></div>`).join('');
+}
+function pick(i){ const r=LAST[i]; openNew({title:r.title, author:r.author, pages:r.pages||'', isbn:r.isbn, cover:PHOTO||(r.cover||'').replace('?default=false','')}); }
+$('#searchBtn').onclick=()=>lookup($('#q').value);
+$('#q').addEventListener('keydown',e=>{ if(e.key==='Enter') lookup($('#q').value); });
+$('#photoSearchBtn').onclick=()=>lookup($('#photoQuery').value,'Which one is it?');
+$('#photoQuery').addEventListener('keydown',e=>{ if(e.key==='Enter') lookup($('#photoQuery').value,'Which one is it?'); });
+
+/* ===================== PHOTO OF COVER ===================== */
+let PHOTO=null;
+$('#coverFile').onchange = async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  PHOTO = await shrink(f, 360);
+  $('#photoImg').src=PHOTO; $('#photoPrev').classList.remove('hide'); $('#photoQuery').focus();
+};
+function shrink(file, maxW){ // downsize so it fits comfortably in localStorage
+  return new Promise((res,rej)=>{ const img=new Image(); const url=URL.createObjectURL(file);
+    img.onload=()=>{ const s=Math.min(1,maxW/img.width); const c=document.createElement('canvas'); c.width=img.width*s; c.height=img.height*s; c.getContext('2d').drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg',.8)); };
+    img.onerror=rej; img.src=url; });
+}
+
+/* ===================== BARCODE SCANNING ===================== */
+let stream=null, scanTimer=null, zx=null;
+const scanMsg=(t,cls='')=>{ const s=$('#scanStatus'); s.className='status '+cls; s.innerHTML=t; s.classList.remove('hide'); };
+const hasNative = ()=>'BarcodeDetector' in window;
+async function nativeDetector(){ let fm=['ean_13','ean_8','upc_a','upc_e']; try{ const sup=await BarcodeDetector.getSupportedFormats(); fm=fm.filter(f=>sup.includes(f)); if(!fm.length) return null; }catch(e){} return new BarcodeDetector({formats:fm}); }
+function loadScript(src){ return new Promise((res,rej)=>{ if(window.Html5Qrcode) return res(); const s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=()=>rej(new Error('Could not load scanner library (are you online?)')); document.head.appendChild(s); }); }
+function gotCode(code){
+  const c=cleanIsbn(code);
+  stopScan();
+  if(!/^97[89]\d{10}$/.test(c)){ scanMsg(`Found code ${esc(code)}, but that doesn't look like a book ISBN (they start 978 or 979). Try again?`,'err'); return; }
+  if(navigator.vibrate) navigator.vibrate(120);
+  scanMsg(`✓ Found ISBN ${c}`,'ok'); $('#q').value=c; lookup(c,'We found this book');
+}
+$('#startScan').onclick = async ()=>{
+  if(!window.isSecureContext && location.protocol!=='file:') scanMsg('The camera needs a secure (https) page. You can still upload a photo of the barcode below.','err');
+  if(!navigator.mediaDevices?.getUserMedia){ scanMsg('This browser cannot use the camera here. Please upload a photo of the barcode instead.','err'); return; }
+  const det = hasNative() ? await nativeDetector() : null;
+  try{
+    if(det){
+      stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280}}});
+      const v=$('#video'); v.srcObject=stream; await v.play();
+      $('#nativeBox').classList.remove('hide'); $('#stopScan').classList.remove('hide'); $('#startScan').classList.add('hide');
+      scanMsg('Looking for a barcode…');
+      scanTimer=setInterval(async()=>{ try{ const r=await det.detect(v); if(r.length) gotCode(r[0].rawValue); }catch(e){} },300);
+    } else {
+      scanMsg('<span class="spinner"></span> Starting scanner…');
+      await loadScript(HTML5QRCODE_CDN);
+      $('#zxreader').classList.remove('hide');
+      zx = new Html5Qrcode('zxreader',{formatsToSupport:[Html5QrcodeSupportedFormats.EAN_13,Html5QrcodeSupportedFormats.EAN_8,Html5QrcodeSupportedFormats.UPC_A],verbose:false});
+      await zx.start({facingMode:'environment'},{fps:10,qrbox:(w,h)=>({width:Math.floor(w*.8),height:Math.floor(Math.min(h,w)*.4)})}, txt=>gotCode(txt), ()=>{});
+      $('#stopScan').classList.remove('hide'); $('#startScan').classList.add('hide');
+      scanMsg('Looking for a barcode…');
+    }
+  }catch(e){ stopScan(); scanMsg('Could not start the camera: '+esc(e.message||e)+'. You can upload a photo of the barcode instead.','err'); }
+};
+$('#stopScan').onclick=()=>{ stopScan(); $('#scanStatus').classList.add('hide'); };
+function stopScan(){
+  clearInterval(scanTimer); scanTimer=null;
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  if(zx){ const z=zx; zx=null; z.stop().catch(()=>{}).finally(()=>{ try{z.clear();}catch(e){} }); }
+  $('#nativeBox')?.classList.add('hide'); $('#zxreader')?.classList.add('hide'); $('#stopScan')?.classList.add('hide'); $('#startScan')?.classList.remove('hide');
+}
+$('#barcodeFile').onchange = async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  scanMsg('<span class="spinner"></span> Reading the barcode in your photo…');
+  try{
+    const det = hasNative() ? await nativeDetector() : null;
+    if(det){ const bmp=await createImageBitmap(f); const r=await det.detect(bmp); if(r.length) return gotCode(r[0].rawValue); }
+    await loadScript(HTML5QRCODE_CDN);
+    const z=new Html5Qrcode('zxfile',{formatsToSupport:[Html5QrcodeSupportedFormats.EAN_13,Html5QrcodeSupportedFormats.EAN_8,Html5QrcodeSupportedFormats.UPC_A],verbose:false});
+    const txt=await z.scanFile(f,false); try{z.clear();}catch(_){}
+    gotCode(txt);
+  }catch(err){ scanMsg('Sorry, we couldn\'t read a barcode in that photo. Try a closer, sharper photo – or type the ISBN in “Search or ISBN”.','err'); }
+  finally{ e.target.value=''; }
+};
+
+/* ===================== start ===================== */
+load();
+// once a user adds their own book, the "demo" banner stays until reset; seeded flag is just for the banner
+go('home');
+</script>
+</body>
+</html>
