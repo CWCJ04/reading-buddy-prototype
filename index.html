@@ -89,6 +89,13 @@ nav.tabs .inner{display:grid;grid-template-columns:repeat(4,1fr);width:100%;max-
 .hero{padding:14px 18px;background:var(--heroBg);color:var(--heroInk);border:2px solid var(--heroLine);border-left-width:8px}
 .hero .big{color:var(--heroNum);font-family:var(--fHead);font-size:2.15rem;white-space:nowrap;font-weight:var(--wHead);letter-spacing:var(--numLS);font-variant-numeric:lining-nums tabular-nums;line-height:1.1;margin:4px 0}
 .hero .lbl{font-size:1rem}
+.hero .figs{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:0;margin:6px 0 2px}
+.hero .fig{min-width:0}
+.hero .fig+.fig{border-left:2px solid var(--line);padding-left:16px}
+.hero .fig .big{margin:0}
+.hero .fig .u{font-size:1rem;font-weight:var(--wStrong);line-height:1.25}
+.hero .fig .sub{font-size:.85rem;color:var(--ink2);line-height:1.3;margin-top:2px}
+
 .hero .fun{margin-top:6px;background:var(--heroSoft);border-radius:12px;padding:10px 12px;font-size:.95rem}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .stat{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 8px;text-align:center;box-shadow:var(--shadow)}
@@ -458,6 +465,8 @@ function renderHome(){
   const wYear = finished.reduce((a,b)=>a+words(b),0) + inProgWords;
   const pYear = finished.reduce((a,b)=>a+(+b.pages||0),0) + inProgPages;
   const wp = wYear / WAR_AND_PEACE;
+  const wFig = wYear>=1e6 ? {n:(wYear/1e6).toFixed(wYear>=1e7?0:1).replace(/\.0$/,''), u:'million words'} : {n:bigWords(wYear), u:'words'};
+  const nAuthors = new Set([...finished,...reading].map(b=>(b.author||'').trim().toLowerCase()).filter(Boolean)).size;
   const st = streak();
   const goal = S.goal||DEFAULT_GOAL, pct = Math.min(1, finished.length/goal);
   const C = 2*Math.PI*50;
@@ -474,14 +483,16 @@ function renderHome(){
     <h2 style="margin:4px 0 6px">${hello} 👋</h2>
     ${S.seeded?`<div class="banner small" style="padding:8px 12px">📌 <b>Demo books</b> – reset at the bottom.</div>`:''}
     <div class="card hero">
-      <div class="lbl">In ${Y} you've read approx.</div>
-      <div class="big">${bigWords(wYear)} words</div>
-      <div class="lbl small" title="Includes pages read in books you are still reading">Based on ${WORDS_PER_PAGE} words a page.</div>
+      <div class="lbl">Your reading in ${Y}</div>
+      <div class="figs">
+        <div class="fig"><div class="big">${finished.length}</div><div class="u">${finished.length===1?'book':'books'} read</div>${reading.length?`<div class="sub">+${reading.length} on the go</div>`:''}</div>
+        <div class="fig"><div class="big">${wFig.n}</div><div class="u">${wFig.u}</div><div class="sub" title="Includes pages read in books you are still reading">approx., ${WORDS_PER_PAGE} a page</div></div>
+      </div>
       <div class="fun">${comp}</div>
     </div>
     ${recallCardHTML()}
     <div class="stats">
-      <div class="stat"><div class="n">${finished.length}</div><div class="t">books finished</div></div>
+      <div class="stat"><div class="n">${nAuthors}</div><div class="t">${nAuthors===1?'author':'authors'}</div></div>
       <div class="stat"><div class="n">${nf(pYear)}</div><div class="t">pages read</div></div>
       <div class="stat"><div class="n">${st}🔥</div><div class="t">day streak</div></div>
     </div>
