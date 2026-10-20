@@ -249,10 +249,16 @@ footer.demo{margin-top:20px;text-align:center}
    the bright coral/amber (--yPop, --success, --heroLine) is only ever used for decoration, never for text */
 [data-theme=youth]{--successInk:#8C2A12;--streakBg:#FFC94D;--streakInk:#1C1714;--heroSoft:#FFF0E6;--heroLine:#E8573A;--bg:#FFF8F1;--surface:#FFFFFF;--surface2:#FCEDE3;--ink:#1C1714;--ink2:#45392F;--line:#F1DCCD;--field:#8B7768;--accent:#8C2A12;--onAccent:#FFFFFF;--accentSoft:#FDEEE8;--success:#E8573A;--onSuccess:#1C1714;--successSoft:#FFE7DC;--hl:#FFE6A6;--hlStrong:#7A4A00;--heroBg:#FFFFFF;--heroInk:#1C1714;--heroNum:#8C2A12;--recallBg:#FFF2D6;--recallInk:#1C1714;--recallBorder:#E0A21B;--focus:#7A4A00;--danger:#8E1F17;--yPop:#E8573A;--yGlow:#FFD9CC}
 [data-theme=youthGreen]{--successInk:#094E37;--streakBg:#FFC94D;--streakInk:#17201B;--heroSoft:#EEF7F1;--heroLine:#23A26E;--bg:#FAF8F0;--surface:#FFFFFF;--surface2:#EAF3EC;--ink:#17201B;--ink2:#3A4540;--line:#D6E4DA;--field:#74857B;--accent:#094E37;--onAccent:#FFFFFF;--accentSoft:#E8F4ED;--success:#23A26E;--onSuccess:#17201B;--successSoft:#E0F2E7;--hl:#FFE6A6;--hlStrong:#7A4A00;--heroBg:#FFFFFF;--heroInk:#17201B;--heroNum:#094E37;--recallBg:#FFF2D6;--recallInk:#17201B;--recallBorder:#E0A21B;--focus:#7A4A00;--danger:#8E1F17;--yPop:#23A26E;--yGlow:#CDEBDB}
-.whoChip{display:flex;align-items:center;gap:8px;min-height:52px;padding:4px 12px 4px 4px;border:2px solid var(--accent);border-radius:99px;background:var(--surface);color:var(--ink);cursor:pointer;font-size:.9rem;line-height:1.15;text-align:left;flex:0 0 auto}
-.whoChip .av{width:42px;height:42px;font-size:1rem}
-.whoChip small{display:block;color:var(--ink2);font-size:.72rem;font-weight:600}
-.whoChip:focus-visible,.yBtn:focus-visible,.switch:focus-visible,.react:focus-visible,.star:focus-visible{outline:4px solid var(--focus);outline-offset:2px}
+.readerBar{display:flex;gap:8px;align-items:center;margin:2px 0 0}
+.rChip{flex:0 0 auto;display:flex;align-items:center;gap:8px;min-height:48px;padding:3px 14px 3px 3px;border-radius:99px;border:2px solid var(--field);background:var(--surface);color:var(--ink);font-family:var(--fBody);font-size:.95rem;font-weight:var(--wStrong);line-height:1.05;cursor:pointer;white-space:nowrap;text-align:left}
+.rChip .av{width:38px;height:38px;font-size:.88rem}
+.rChip small{display:block;font-size:.72rem;font-weight:600;color:var(--ink2);margin-top:1px}
+.rChip[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--onAccent)}
+.rChip[aria-pressed=true] small{color:var(--onAccent)}
+.rChip[aria-pressed=true] .av{background:var(--onAccent);color:var(--accent)}
+.rChip.add{padding:3px 14px;border-style:dashed;color:var(--ink2);font-weight:600;margin-left:auto}
+.rChip:focus-visible{outline:4px solid var(--focus,var(--ink));outline-offset:2px}
+.yBtn:focus-visible,.switch:focus-visible,.react:focus-visible,.star:focus-visible{outline:4px solid var(--focus);outline-offset:2px}
 .av{flex:0 0 auto;width:52px;height:52px;border-radius:50%;display:grid;place-items:center;font-weight:var(--wStrong);background:var(--accent);color:var(--onAccent);font-size:1.1rem}
 .av.ad{background:#2F2F2D;color:#FFFBF2}
 .yHello{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:4px 0 6px}
@@ -336,8 +342,8 @@ footer.demo{margin-top:20px;text-align:center}
       <h1>Reading Buddy <small>(working title) · prototype</small></h1>
     </div>
     <span class="pill" id="protoPill" title="This is a prototype with demo data">PROTOTYPE</span>
-    <button class="whoChip hide" id="whoChip" onclick="openWho()" aria-label="Who's reading? Switch reader"></button>
   </header>
+  <div class="readerBar" id="readerBar" role="group" aria-label="Who’s reading? Each reader’s books and settings are kept separately on this device."></div>
 
   <!-- ===== DASHBOARD ===== -->
   <section id="view-home" class="view" aria-label="Dashboard"></section>
@@ -680,7 +686,6 @@ function renderHome(){
 
     ${recsCardHTML()}
 
-    ${whoCardHTML()}
 
     <div class="card" id="themeCard">
       <h3>🎨 Colours</h3>
@@ -1365,38 +1370,22 @@ function seedYouth(){
 
 /* ---------- who's reading ---------- */
 function profileMode(id){ if(id==='adult') return 'Adult'; const m=(ACTIVE===id?S:peek(`readingBuddy.${id}.v1`))||{}; return m.mode==='teen'?'Teen (13–17)':'Junior (8–12)'; }
-function whoCardHTML(){
-  return `<div class="card" id="whoCard">
-    <h3>🙋 Who’s reading?</h3>
-    <p class="muted small" style="margin-top:0">Each reader has their own books, goals and settings, kept separately on this device.</p>
-    <div class="themes" role="group" aria-label="Who's reading">${PROFILES.map(whoBtnHTML).join('')}</div>
-  </div>`;
-}
-function whoBtnHTML(p){
-  const on = p.id===ACTIVE;
-  return `<button class="themeBtn" data-profile-pick="${p.id}" aria-pressed="${on}" onclick="switchProfile('${p.id}')">
-    <span class="av${p.youth?'':' ad'}" aria-hidden="true">${p.youth?'M':'Me'}</span>
-    <span><b>${esc(p.name)}</b> <span class="tag demo">${esc(profileMode(p.id))}</span><br><span class="small muted">${esc(p.blurb)}</span></span>
-    <span class="tick" aria-hidden="true">${on?'✓':''}</span></button>`;
-}
-function openWho(){
-  openSheet(`<button class="x" onclick="closeSheet()" aria-label="Close">✕</button>
-    <h2 style="margin-top:4px">Who’s reading?</h2>
-    <p class="muted">Each reader has their own books, goals and settings, kept separately on this device.</p>
-    <div class="themes" role="group" aria-label="Who's reading">${PROFILES.map(whoBtnHTML).join('')}</div>
-    <p class="small muted" style="margin-top:14px">Mia is a demo reader. Junior or Teen mode is chosen by a parent in <b>Parent controls</b>.</p>`);
+function readerBarHTML(){
+  return PROFILES.map(p=>{ const on=p.id===ACTIVE, nm=p.youth?p.name:'Me', mode=p.youth?profileMode(p.id).split(' ')[0]:'Adult';
+    return `<button class="rChip" data-profile-pick="${p.id}" aria-pressed="${on}" onclick="switchProfile('${p.id}')" aria-label="${esc(p.youth?p.name:'Me (adult)')}, ${esc(profileMode(p.id))}${on?' – reading now':''}">
+      <span class="av${p.youth?'':' ad'}" aria-hidden="true">${p.youth?esc(p.name[0]):'🙂'}</span><span>${esc(nm)}<small>${esc(mode)}</small></span></button>`; }).join('')
+  + `<button class="rChip add" aria-disabled="true" onclick="toast('Adding readers isn’t part of this demo – try switching between Me and Mia')" aria-label="Add a reader (not available in this demo)">+ Add</button>`;
 }
 function switchProfile(id){
-  if(id===ACTIVE){ closeSheet(); return; }
+  if(id===ACTIVE){ toast(isYouth()?`${S.name} is reading now`:'You’re reading now'); return; }
   save(); ACTIVE=id; PARENT_OK=false; try{ localStorage.setItem(PROFILE_KEY,id); }catch(e){}
   load(); RS=recStore(); applyTheme(currentTheme()); applyFont(currentFont()); applyChrome(); closeSheet(); go('home');
   toast(isYouth() ? `Hi ${S.name}! You’re in ${modeName()} mode` : 'Welcome back – here are your books');
 }
 function applyChrome(){
-  const y=isYouth(), chip=$('#whoChip');
+  const y=isYouth();
   if(y) document.documentElement.setAttribute('data-profile','youth'); else document.documentElement.removeAttribute('data-profile');
-  $('#protoPill').classList.toggle('hide', y); chip.classList.toggle('hide', !y);
-  if(y) chip.innerHTML = `<span class="av" aria-hidden="true">${esc(S.name[0])}</span><span><b>${esc(S.name)}</b><small>${modeName()}</small></span><span aria-hidden="true">▾</span>`;
+  $('#readerBar').innerHTML = readerBarHTML();
   $('#clubTabLbl').textContent = y ? 'Clubs' : 'Book club';
 }
 
@@ -1612,7 +1601,6 @@ function renderYouthHome(){
 
     ${recsCardHTML()}
 
-    ${whoCardHTML()}
 
     <div class="card" id="themeCard">
       <h3>🎨 Colours</h3>
