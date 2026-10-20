@@ -214,6 +214,35 @@ textarea.jot:focus{border-color:var(--accent);outline:4px solid var(--focus);out
 .hide{display:none!important}
 .empty{text-align:center;padding:24px 10px;color:var(--muted)}
 footer.demo{margin-top:20px;text-align:center}
+/* ============ Recommendations ============ */
+.recs .recsHead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px 14px;flex-wrap:wrap}
+.recs .recsHead h3{margin:0;font-size:1.25rem}
+.recs .recsLead{margin:4px 0 0;font-size:1rem;color:var(--ink2)}
+.recs .recRefresh{min-height:52px;padding:8px 16px;font-size:.92rem;white-space:nowrap}
+.recList{display:grid;grid-template-columns:minmax(0,1fr);column-gap:28px}
+.rec{display:flex;flex-direction:column;padding:16px 0 18px;border-top:1px solid var(--line)}
+.rec:first-child{border-top:0}
+.rec .book{align-items:flex-start}
+.rec .why{margin:8px 0 0;padding:8px 12px;background:var(--heroSoft);border-left:5px solid var(--recallBorder);border-radius:8px;font-size:.95rem;line-height:1.4;color:var(--ink)}
+.rec .why.friend{background:var(--recallBg)}
+.rec .quote{display:block;margin-top:4px;font-family:var(--fHead);font-style:italic}
+.recBtns{display:grid;grid-template-columns:1.4fr 1fr;gap:8px;margin-top:auto;padding-top:12px}
+.recBtns .btn{min-height:56px;padding:8px 8px;font-size:.95rem;white-space:nowrap}
+.btn.quiet{background:var(--surface);border-color:var(--field);color:var(--ink)}
+.findRow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.findRow .lbl{grid-column:1/-1;font-weight:var(--wStrong);font-size:.9rem;margin:2px 0 -2px}
+.findRow .btn{min-height:52px;padding:6px 6px;font-size:.88rem;white-space:nowrap;background:var(--surface);color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+.recSub{font-family:var(--fHead);font-weight:var(--wHead);font-size:1.12rem;margin:10px 0 0;padding-top:14px;border-top:2px solid var(--line)}
+.recSub+.recList .rec:first-child{padding-top:10px}
+.recFoot{margin:10px 0 0;padding-top:12px;border-top:1px solid var(--line)}
+.recFoot .btn{min-height:48px;margin-top:8px;font-size:.9rem;padding:8px 14px}
+.recWait{display:flex;align-items:center;gap:10px;padding:10px 0;color:var(--ink2)}
+.bookActions a.btn{white-space:nowrap;padding:8px 6px}
+.tag.want{background:var(--accentSoft);color:var(--ink);box-shadow:inset 0 0 0 1px var(--field)}
+@media (min-width:700px){
+  .recList{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .recList .rec:nth-child(2){border-top:0}
+}
 </style>
 </head>
 <body>
@@ -300,9 +329,10 @@ footer.demo{margin-top:20px;text-align:center}
   <!-- ===== MY BOOKS ===== -->
   <section id="view-books" class="view hide" aria-label="My books">
     <h2>My books</h2>
-    <div class="seg" role="group" aria-label="Filter">
+    <div class="seg" role="group" aria-label="Filter" style="grid-template-columns:repeat(4,1fr)">
       <button data-filter="reading" aria-pressed="false">Reading</button>
       <button data-filter="finished" aria-pressed="false">Finished</button>
+      <button data-filter="want" aria-pressed="false">To read</button>
       <button data-filter="all" aria-pressed="true">All</button>
     </div>
     <div id="bookList"></div>
@@ -544,6 +574,8 @@ function renderHome(){
       <p class="muted small" style="margin-top:8px">Counted in the month you finished each book. k = thousand words. The <b>lighter, outlined bar</b> is this month.</p>
     </div>
 
+    ${recsCardHTML()}
+
     <div class="card" id="themeCard">
       <h3>🎨 Colours</h3>
       <p class="muted small" style="margin-top:0">Pick the one that's easiest on your eyes. All three are tested for strong contrast.</p>
@@ -567,20 +599,22 @@ function renderHome(){
     </div>
 
     <footer class="demo card">
-      <p class="small muted">Demo books are marked “Demo”. Your own books are saved on this device only. Reset also restores the default colours and lettering.</p>
+      <p class="small muted">Demo books are marked “Demo”. Your own books are saved on this device only. Reset also restores the default colours, lettering and suggestions.</p>
       <button class="btn ghost block" onclick="resetDemo()">↺ Reset demo data</button>
     </footer>`;
+  clearTimeout(renderHome._live); renderHome._live = setTimeout(()=>ensureLive(), 1200); // a short pause, so quick taps don't trigger lookups
 }
 function readToday(){ logToday(); save(); renderHome(); toast('Lovely – reading logged for today'); }
 function setGoal(d){ S.goal=Math.max(1,(S.goal||DEFAULT_GOAL)+d); save(); renderHome(); }
-function resetDemo(){ if(!confirm('Reset to the demo books? This removes any books you have added on this device.')) return; S=seed(); save(); try{ localStorage.removeItem(THEME_KEY); localStorage.removeItem(FONT_KEY); }catch(e){} applyTheme(currentTheme()); applyFont(currentFont()); go('home'); toast('Demo data, colours and lettering restored'); }
+function resetDemo(){ if(!confirm('Reset to the demo books? This removes any books you have added on this device.')) return; S=seed(); save(); try{ localStorage.removeItem(THEME_KEY); localStorage.removeItem(FONT_KEY); localStorage.removeItem(REC_KEY); }catch(e){} RS=recStore(); applyTheme(currentTheme()); applyFont(currentFont()); go('home'); toast('Demo data, colours and lettering restored'); }
 
 /* ===================== MY BOOKS ===================== */
 let FILTER='all';
 $$('.seg button').forEach(b=>b.onclick=()=>{FILTER=b.dataset.filter; $$('.seg button').forEach(x=>x.setAttribute('aria-pressed',x===b)); renderBooks();});
 function renderBooks(){
   let list = S.books.filter(b=>FILTER==='all'||b.status===FILTER);
-  list.sort((a,b)=> (a.status==='reading'?-1:0)-(b.status==='reading'?-1:0) || (b.finishDate||b.startDate||'').localeCompare(a.finishDate||a.startDate||''));
+  const rank=b=>b.status==='reading'?0:b.status==='want'?1:2;
+  list.sort((a,b)=> rank(a)-rank(b) || (b.finishDate||b.startDate||b.addedDate||'').localeCompare(a.finishDate||a.startDate||a.addedDate||''));
   $('#bookList').innerHTML = list.length ? list.map(b=>{
     const p=b.pages?Math.round(100*(b.currentPage||0)/b.pages):0;
     return `<div class="card"><div class="book">
@@ -589,19 +623,24 @@ function renderBooks(){
         <div class="title">${esc(b.title)}</div>
         <div class="author">${esc(b.author||'Unknown author')}</div>
         <div class="tagrow">
-          ${b.status==='finished'?'<span class="tag fin">✓ Finished</span>':'<span class="tag rd">Reading</span>'}
+          ${b.status==='finished'?'<span class="tag fin">✓ Finished</span>':b.status==='want'?'<span class="tag want">🔖 To read</span>':'<span class="tag rd">Reading</span>'}
           ${b.demo?'<span class="tag demo">Demo</span>':''}
         </div>
+        ${b.status==='want'?`<div class="small muted">${b.addedDate?'On your list since '+fmtDate(b.addedDate):'On your list'}</div>${b.recBy?`<div class="small">${b.recBy.startsWith("Recommended")?"💬":"✨"} ${esc(b.recBy)}</div>`:''}`:`
         <div class="small">${b.pages?nf(b.pages)+' pages':'Pages unknown'} · approx. ${nf(words(b))} words${b.wordsOverride?' (your figure)':''}</div>
-        <div class="small muted">${b.startDate?'Started '+fmtDate(b.startDate):''}${b.finishDate?' · Finished '+fmtDate(b.finishDate):''}</div>
+        <div class="small muted">${b.startDate?'Started '+fmtDate(b.startDate):''}${b.finishDate?' · Finished '+fmtDate(b.finishDate):''}</div>`}
         ${b.status==='reading'?`<div class="progress"><i style="width:${p}%"></i></div><div class="small"><b>Page ${b.currentPage||0} of ${b.pages||'?'}</b> · ${p}%</div>`:''}
       </div></div>
-        <div class="actions bookActions">
+        ${b.status==='want'?`<div class="actions bookActions">
+          <button class="btn" onclick="startReading('${b.id}')">📖 Start reading</button>
+          ${findLinks(b)}
+          <button class="btn secondary" style="grid-column:1/-1" onclick="openEdit('${b.id}')">✏️ Edit</button>
+        </div></div>`:`<div class="actions bookActions">
           <button class="btn" onclick="openRecall('${b.id}')">🧠 Remember${b.status==='reading'?' so far':' the story'}</button>
           ${b.status==='reading'?`<button class="btn green" onclick="openEdit('${b.id}',true)">Update page</button>`:''}
           <button class="btn secondary" onclick="openEdit('${b.id}')">✏️ Edit</button>
           ${(b.notes||[]).length?`<button class="btn secondary" style="${b.status==='reading'?'grid-column:1/-1':''}" onclick="openNotes('${b.id}')">📝 My recall notes (${b.notes.length})</button>`:''}
-        </div></div>`}).join('') : `<div class="card empty">No books here yet.<br><button class="btn" style="margin-top:12px" onclick="go('add')">Add a book</button></div>`;
+        </div></div>`}`}).join('') : FILTER==='want'?`<div class="card empty">Nothing on your “To read” list yet.<br>Tap <b>Add to my list</b> on a suggestion on the Home page.<br><button class="btn" style="margin-top:12px" onclick="go('home');setTimeout(()=>{const r=$('#recsCard');r&&r.scrollIntoView({block:'start'})},50)">See suggestions</button></div>`:`<div class="card empty">No books here yet.<br><button class="btn" style="margin-top:12px" onclick="go('add')">Add a book</button></div>`;
 }
 
 /* ===================== EDIT / ADD SHEET ===================== */
@@ -635,16 +674,17 @@ function showEdit(quick){
     </div>
     ${quick?'':`
     <label class="f">Status</label>
-    <div class="seg" style="grid-template-columns:1fr 1fr" role="group">
+    <div class="seg" role="group">
       <button type="button" data-st="reading" aria-pressed="${b.status==='reading'}" onclick="setSt('reading')">📖 Reading</button>
       <button type="button" data-st="finished" aria-pressed="${b.status==='finished'}" onclick="setSt('finished')">✓ Finished</button>
+      <button type="button" data-st="want" aria-pressed="${b.status==='want'}" onclick="setSt('want')">🔖 To read</button>
     </div>
     <div class="grid2">
       <div><label class="f" for="e-pages">Pages</label><input type="number" inputmode="numeric" min="0" id="e-pages" value="${esc(b.pages)}" oninput="updWords()"></div>
       <div><label class="f" for="e-words">Words (approx.)</label><input type="number" inputmode="numeric" min="0" id="e-words" value="${b.wordsOverride||''}" placeholder="${nf(words(b))}" oninput="updWords()"></div>
     </div>
     <p class="hint" id="e-wordhint"></p>
-    <div class="grid2">
+    <div class="grid2" id="dateWrap">
       <div><label class="f" for="e-start">Started</label><input type="date" id="e-start" value="${esc(b.startDate)}"></div>
       <div id="finWrap"><label class="f" for="e-finish">Finished</label><input type="date" id="e-finish" value="${esc(b.finishDate)}"></div>
     </div>`}
@@ -665,7 +705,9 @@ function showEdit(quick){
 function setSt(s){ DRAFT.status=s; $$('#sheet [data-st]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.st===s));
   const fw=$('#finWrap'); if(fw) fw.style.visibility = s==='finished'?'visible':'hidden';
   if(s==='finished' && $('#e-finish') && !$('#e-finish').value) $('#e-finish').value=today();
-  $('#progWrap').classList.toggle('hide', s==='finished'); }
+  if(s==='reading' && $('#e-start') && !$('#e-start').value) $('#e-start').value=today();
+  const dw=$('#dateWrap'); if(dw) dw.classList.toggle('hide', s==='want');
+  $('#progWrap').classList.toggle('hide', s!=='reading'); }
 function updWords(){
   const p=+$('#e-pages').value||0, w=$('#e-words');
   w.placeholder = nf(p*WORDS_PER_PAGE);
@@ -680,9 +722,10 @@ function saveDraft(){
   if($('#e-pages')){ b.pages=+$('#e-pages').value||0; b.wordsOverride=+$('#e-words').value||null; b.startDate=$('#e-start').value; b.finishDate=b.status==='finished'?($('#e-finish').value||today()):''; }
   const prev = S.books.find(x=>x.id===b.id);
   const prevPage = prev ? (+prev.currentPage||0) : 0;
-  b.currentPage = b.status==='finished' ? (b.pages||0) : (+$('#e-page').value||0);
+  b.currentPage = b.status==='finished' ? (b.pages||0) : b.status==='want' ? 0 : (+$('#e-page').value||0);
+  if(b.status==='want'){ b.startDate=''; b.finishDate=''; if(!b.addedDate) b.addedDate=today(); }
   if(b.status==='reading' && b.pages && b.currentPage>=b.pages && confirm('That\'s the last page! Mark this book as finished?')){ b.status='finished'; b.finishDate=today(); }
-  if(!prev || prev.currentPage!==b.currentPage || b.status==='finished') logToday();
+  if(b.status!=='want' && (!prev || prev.currentPage!==b.currentPage || b.status==='finished')) logToday();
   const isNew=b._new; delete b._new;
   if(prev) Object.assign(prev,b); else S.books.push(b);
   save(); closeSheet(); PHOTO=null;
@@ -845,6 +888,266 @@ function progressNudge(b){
     <p>Want to do a quick recall? It takes about 2 minutes.</p></div>
     <button class="btn green block" style="min-height:64px;font-size:1.12rem" onclick="openRecall('${b.id}')">🧠 Yes, let's remember</button>
     <button class="btn ghost block" style="margin-top:10px" onclick="closeSheet()">Not now</button>`);
+}
+
+/* ===================== RECOMMENDED FOR YOU ===================== */
+// Suggestions come from the books you've logged: the same authors, the same kinds of story
+// (Open Library subjects), and star ratings if a book has one (1–5; low-rated books are ignored).
+// A hand-picked list keyed on the demo books means the demo works offline and instantly;
+// when online, Open Library adds more ideas, cached on this device for a week.
+const REC_KEY  = 'readingBuddy.recs';
+const REC_SHOW = 4;                 // personal suggestions shown at a time (plus up to 2 from friends)
+const REC_TTL  = 7*864e5;           // keep live results for a week
+const REC_LIVE_SOURCES = 3;         // how many of your books we ask Open Library about
+const REC_BACKOFF = 20*6e4;         // after a failed lookup, wait 20 minutes before trying again
+const OLC = id => `https://covers.openlibrary.org/b/id/${id}-M.jpg`;
+const OLI = isbn => `https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg`;
+const pk = (title, author, cover, tail) => ({title, author, cover, tail});
+const CURATED = [ // [one of your books, author] → suggestions with a plain-English reason
+  ['Pride and Prejudice','Jane Austen', [
+    pk('Persuasion','Jane Austen',OLI('9780141439686'),'another Jane Austen, and many readers’ favourite'),
+    pk('North and South','Elizabeth Gaskell',OLC(8242253),'another love story where first impressions are wrong'),
+    pk('Middlemarch','George Eliot',OLC(252882),'a rich, warm portrait of English village life')]],
+  ['Rebecca','Daphne du Maurier', [
+    pk('My Cousin Rachel','Daphne du Maurier',OLC(2993970),'more of Daphne du Maurier’s slow-burning suspense'),
+    pk('The Woman in White','Wilkie Collins',OLC(4684227),'another gripping mystery with a dark secret'),
+    pk('Jamaica Inn','Daphne du Maurier',OLC(8765960),'another Daphne du Maurier, set on the wild Cornish moors'),
+    pk('Jane Eyre','Charlotte Brontë',OLI('9780141441146'),'a big old house, a brooding hero and a secret')]],
+  ['The Remains of the Day','Kazuo Ishiguro', [
+    pk('Never Let Me Go','Kazuo Ishiguro',OLI('9780571224135'),'another quietly moving Kazuo Ishiguro'),
+    pk('Stoner','John Williams',OLC(8310729),'another quiet, beautifully written life story'),
+    pk('Klara and the Sun','Kazuo Ishiguro',OLC(10648686),'Kazuo Ishiguro’s gentle, thoughtful later novel')]],
+  ['Where the Crawdads Sing','Delia Owens', [
+    pk('The Great Alone','Kristin Hannah',OLC(8315368),'another story of a girl growing up in the wild'),
+    pk('The Secret Life of Bees','Sue Monk Kidd',OLC(402759),'another warm coming-of-age story in the American South'),
+    pk('Prodigal Summer','Barbara Kingsolver',OLC(23515),'more nature, love and small-town life')]],
+  ['The Thursday Murder Club','Richard Osman', [
+    pk('The Man Who Died Twice','Richard Osman',OLC(11358314),'the next case for the same four friends'),
+    pk('The Appeal','Janice Hallett',OLC(11307423),'another clever, funny whodunnit set in an English town'),
+    pk('The Bullet That Missed','Richard Osman',OLC(12929475),'the third Thursday Murder Club mystery'),
+    pk('The Cuckoo’s Calling','Robert Galbraith',OLC(7261207),'another British detective story to get stuck into')]],
+  ['A Gentleman in Moscow','Amor Towles', [
+    pk('The Lincoln Highway','Amor Towles',OLC(10648601),'another Amor Towles, full of warmth and charm'),
+    pk('Rules of Civility','Amor Towles',OLC(7434532),'Amor Towles’s elegant story of 1930s New York'),
+    pk('The Pillars of the Earth','Ken Follett',OLC(9269909),'another big, absorbing story to lose yourself in')]],
+  ['Lessons in Chemistry','Bonnie Garmus', [
+    pk('Remarkably Bright Creatures','Shelby Van Pelt',OLI('9780063204157'),'another funny, warm story with an unusual heroine'),
+    pk('Eleanor Oliphant Is Completely Fine','Gail Honeyman',OLC(8415055),'another touching, funny story with an unforgettable heroine'),
+    pk('The Rosie Project','Graeme Simsion',OLC(10186221),'more humour and heart, with a scientist at the centre')]],
+  ['Wolf Hall','Hilary Mantel', [
+    pk('Bring Up the Bodies','Hilary Mantel',OLC(10236749),'it’s the next part of Thomas Cromwell’s story'),
+    pk('The Mirror and the Light','Hilary Mantel',OLC(11540576),'the final part of Hilary Mantel’s Cromwell trilogy'),
+    pk('The Pillars of the Earth','Ken Follett',OLC(9269909),'another big, rich historical novel')]],
+];
+// Demo picks from the (sample) book club – how family & friends' recommendations could appear
+const FRIEND_PICKS = [
+  {title:'The Unlikely Pilgrimage of Harold Fry', author:'Rachel Joyce', cover:OLI('9780857520647'), who:'Auntie Jean', quote:'A lovely, gentle story. I cried at the end – in a good way!'},
+  {title:'The Guernsey Literary and Potato Peel Pie Society', author:'Mary Ann Shaffer', cover:OLC(14859218), who:'Margaret', rel:'your sister', quote:'It’s told in letters, so it’s easy to pick up and put down.'},
+];
+const NICE_SUBJECTS = [ // Open Library subjects we understand, and how to say them plainly
+  [/gothic/i, 'another atmospheric story with a dark secret'],
+  [/detective and mystery|mystery fiction|fiction, mystery|^murder/i, 'another good mystery to get stuck into'],
+  [/historical fiction|fiction, historical/i, 'another rich historical story'],
+  [/suspense/i, 'another story full of suspense'],
+  [/love stories|romance/i, 'another love story'],
+  [/humou?r/i, 'more gentle humour'],
+  [/coming of age|bildungsroman/i, 'another coming-of-age story'],
+  [/friendship/i, 'another story about friendship'],
+  [/family|domestic fiction/i, 'another story about family life'],
+  [/nature|wilderness/i, 'more of the natural world'],
+  [/world war|war stories/i, 'another wartime story'],
+  [/psychological fiction/i, 'another absorbing character study'],
+];
+const normT = s => String(s||'').toLowerCase().split(/[:(\[]/)[0].replace(/&/g,' and ').replace(/[’']/g,'').replace(/[^a-z0-9]+/g,' ').trim().replace(/^(the|a|an) /,'');
+const authorKey = a => String(a||'').split(/,|&| and /)[0].toLowerCase().replace(/[^a-z]/g,'');
+const CURATED_BY = Object.fromEntries(CURATED.map(([t,a,list])=>[normT(t), list]));
+const shopQ = b => encodeURIComponent(`${b.title} ${String(b.author||'').split(',')[0]}`.trim()).replace(/%20/g,'+');
+const amazonUrl   = b => `https://www.amazon.co.uk/s?k=${shopQ(b)}&i=digital-text`;
+const bookshopUrl = b => `https://uk.bookshop.org/search?keywords=${shopQ(b)}`;
+function findLinks(b){
+  return `<a class="btn secondary" href="${esc(amazonUrl(b))}" target="_blank" rel="noopener" aria-label="Find ${esc(b.title)} for Kindle on Amazon UK (opens a new tab)">Amazon Kindle&nbsp;↗</a><a class="btn secondary" href="${esc(bookshopUrl(b))}" target="_blank" rel="noopener" aria-label="Find ${esc(b.title)} on Bookshop.org UK (opens a new tab)">Bookshop.org&nbsp;↗</a>`;
+}
+
+function recStore(){ try{ const r=JSON.parse(localStorage.getItem(REC_KEY)); if(r&&r.v===1) return {dismissed:[],offset:0,live:{},...r}; }catch(e){} return {v:1,dismissed:[],offset:0,live:{}}; }
+let RS = recStore();
+function saveRS(){ try{ localStorage.setItem(REC_KEY, JSON.stringify(RS)); }catch(e){ try{ RS.live={}; localStorage.setItem(REC_KEY, JSON.stringify(RS)); }catch(_){} } }
+const liveKey = b => normT(b.title)+'|'+authorKey(b.author);
+
+// Your logged books, most telling first: high ratings, the book on the go, recent reads, favourite authors
+function recSources(){
+  const logged = S.books.filter(b=>b.status==='finished'||b.status==='reading');
+  const ac = {}; logged.forEach(b=>{ const a=authorKey(b.author); if(a) ac[a]=(ac[a]||0)+1; });
+  const now = Date.now();
+  return logged.filter(b=>!(+b.rating) || +b.rating>=3).map(b=>{
+    const d = b.finishDate||b.startDate||'', age = d ? (now-new Date(d+'T12:00:00'))/864e5 : 999, n = ac[authorKey(b.author)]||0;
+    let w = +b.rating ? +b.rating-2.5 : 1;
+    if(b.status==='reading') w += .6;
+    w += age<60 ? .5 : age<180 ? .25 : 0;
+    if(n>1) w += .5*(n-1);
+    return {b, w, d, n};
+  }).sort((x,y)=>y.w-x.w || y.d.localeCompare(x.d));
+}
+function whyHTML(src, c){
+  const t = `<b>${esc(src.b.title)}</b>`, r = +src.b.rating;
+  const lead = c.kind==='author' && src.n>1 ? `Because you’ve enjoyed ${src.n} books by ${esc(src.b.author)}`
+    : r>=4 ? `Because you loved ${t} (you gave it ${r} stars)`
+    : src.b.status==='reading' ? `Because you’re enjoying ${t}`
+    : `Because you enjoyed ${t}`;
+  return lead + (c.tail ? ` – ${esc(c.tail)}.` : '.');
+}
+function recBlocked(){ return new Set([...S.books.map(b=>normT(b.title)), ...RS.dismissed]); }
+function recCandidates(){
+  const blocked = recBlocked(), friendKeys = new Set(FRIEND_PICKS.map(f=>normT(f.title)));
+  const lists = recSources().map(s=>({s, items:[
+    ...(CURATED_BY[normT(s.b.title)]||[]).map(c=>({...c, kind:authorKey(c.author)===authorKey(s.b.author)?'author':'theme'})),
+    ...((RS.live[liveKey(s.b)]||{}).items||[]) ]}));
+  const out=[], seen=new Set();
+  for(let round=0; round<12; round++){ // one idea per book per round, so the mix stays varied
+    let any=false;
+    for(const L of lists){
+      while(L.items.length){ const c=L.items.shift(), k=normT(c.title);
+        if(!k || blocked.has(k) || seen.has(k) || friendKeys.has(k)) continue;
+        seen.add(k); out.push({...c, key:k, why:whyHTML(L.s,c)}); any=true; break; }
+    }
+    if(!any) break;
+  }
+  if(!out.length){ // nothing logged yet (or every idea used up): book-club favourites
+    CURATED.flatMap(x=>x[2]).forEach(c=>{ const k=normT(c.title); if(!blocked.has(k)&&!seen.has(k)&&!friendKeys.has(k)){ seen.add(k); out.push({...c, key:k, why:'A much-loved favourite with book clubs.', generic:true}); } });
+  }
+  return out;
+}
+let REC_VIEW = {}, LIVE_BUSY = false;
+const LIVE_TRIED = new Set();
+function recPage(all){
+  if(all.length<=REC_SHOW) return all;
+  const pages = Math.ceil(all.length/REC_SHOW), start = ((RS.offset||0)%pages)*REC_SHOW;
+  const page = all.slice(start, start+REC_SHOW);
+  return page.length>=3 ? page : page.concat(all.slice(0, REC_SHOW-page.length));
+}
+function recItemHTML(c){
+  REC_VIEW[c.key] = c;
+  return `<article class="rec" data-rec="${esc(c.key)}">
+    <div class="book">${coverHTML(c)}
+      <div class="meta"><div class="title">${esc(c.title)}</div><div class="author">${esc(c.author)}</div>
+        <p class="why${c.friend?' friend':''}">${c.why}</p></div></div>
+    <div class="recBtns">
+      <button class="btn" onclick="recAdd('${esc(c.key)}')" aria-label="Add ${esc(c.title)} to my To read list">+ Add to my list</button>
+      <button class="btn quiet" onclick="recDismiss('${esc(c.key)}')" aria-label="Not for me: hide ${esc(c.title)}">Not for me</button>
+    </div>
+    <div class="findRow"><span class="lbl">Find it:</span>${findLinks(c)}</div>
+  </article>`;
+}
+function recsCardHTML(){
+  REC_VIEW = {};
+  const all = recCandidates(), picks = recPage(all), blocked = recBlocked();
+  const friends = FRIEND_PICKS.filter(f=>!blocked.has(normT(f.title))).slice(0,2).map(f=>({...f, key:normT(f.title), friend:true,
+    why:`💬 Recommended by <b>${esc(f.who)}</b>${f.rel?`, ${esc(f.rel)},`:''} in your book club<span class="quote">“${esc(f.quote)}”</span>`}));
+  const noBooks = !recSources().length, nHidden = RS.dismissed.length;
+  return `<section class="card recs" id="recsCard" aria-labelledby="recsH">
+    <div class="recsHead">
+      <div><h3 id="recsH">📚 Recommended for you</h3>
+      <p class="recsLead">${noBooks?'Add a few books you’ve enjoyed and we’ll suggest more like them. To start you off:':'Based on your reading, we recommend…'}</p></div>
+      <button class="btn secondary recRefresh" onclick="refreshRecs()">↻ Refresh suggestions</button>
+    </div>
+    ${LIVE_BUSY?`<div class="recWait small" role="status"><span class="spinner" aria-hidden="true"></span> Looking for more ideas…</div>`:''}
+    ${picks.length?`<div class="recList">${picks.map(recItemHTML).join('')}</div>`:`<p class="muted">You’ve seen all our ideas for now. Add more books and we’ll find new ones.</p>`}
+    ${friends.length?`<h4 class="recSub">From friends &amp; family</h4><div class="recList">${friends.map(recItemHTML).join('')}</div>`:''}
+    <div class="recFoot small muted">Book details and covers come from Open Library. “Find it” opens Amazon or Bookshop.org in a new tab.
+      ${nHidden?`<br><button class="btn quiet" onclick="unhideRecs()">Show the ${nHidden} I said “Not for me” to</button>`:''}</div>
+  </section>`;
+}
+function refreshRecsCard(focusIdx){
+  const el = $('#recsCard'); if(VIEW!=='home' || !el) return;
+  el.outerHTML = recsCardHTML();
+  if(focusIdx!=null){ const items=$$('#recsCard .rec'); const it=items[Math.min(focusIdx,items.length-1)]; const b=it?it.querySelector('.btn'):$('#recsCard .recRefresh'); b&&b.focus({preventScroll:true}); }
+}
+function recIndex(key){ return $$('#recsCard .rec').findIndex(x=>x.dataset.rec===key); }
+function recAdd(key){
+  const c = REC_VIEW[key]; if(!c) return; const i = recIndex(key);
+  S.books.push({id:uid(), demo:false, title:c.title, author:c.author, isbn:'', cover:c.cover||'', pages:0, wordsOverride:null,
+    status:'want', startDate:'', finishDate:'', currentPage:0, addedDate:today(), recBy:c.friend?`Recommended by ${c.who}`:'Suggested for you'});
+  save(); refreshRecsCard(i);
+  toast(`Added “${c.title}” to your To read list`);
+}
+function recDismiss(key){
+  const c = REC_VIEW[key]; const i = recIndex(key);
+  if(!RS.dismissed.includes(key)) RS.dismissed.push(key);
+  saveRS(); refreshRecsCard(i);
+  toast(`Okay – we won’t suggest ${c?'“'+c.title+'”':'that one'} again`);
+}
+function unhideRecs(){ RS.dismissed=[]; saveRS(); refreshRecsCard(0); toast('Hidden suggestions are back'); }
+function refreshRecs(){
+  const n = recCandidates().length;
+  RS.offset = (RS.offset||0)+1; saveRS();
+  refreshRecsCard(0);
+  toast(n>REC_SHOW ? 'Here are some more ideas' : 'That’s all our ideas for now – add more books for new ones');
+  ensureLive(true);
+}
+
+/* live suggestions from Open Library (search.json + subjects), cached per book */
+const REC_JUNK = /\b(collection|box(ed)? ?set|omnibus|complete|stories|novels|works|trilogy|summary|study guide|notes|books? \d|volume|vol\.|sampler|preview|cliffs ?notes|sparknotes|graphic novel)\b|[\[\]]/i;
+const REC_LATIN = /^[\x20-\x7E‘’“”–—]+$/;   // plain English-looking titles only
+const REC_FOREIGN = /^(le|la|les|el|los|las|das|der|die|het|een|il|lo|des|du|del)\s|\b(und|et|y)\b|,?\s+(I{1,3}|IV|VI{0,3})$/i;
+function pickSubject(subs){
+  const ok = subs.filter(x=>x && x.length<45 && !x.includes('--') && !x.includes(':')).sort((a,b)=>a.includes(',')-b.includes(','));
+  for(const [re, tail] of NICE_SUBJECTS){ const raw = ok.find(x=>re.test(x)); if(raw) return {raw, tail}; }
+  return null;
+}
+async function liveFor(b){
+  const a = String(b.author||'').split(/,|&/)[0].trim(), ak = authorKey(a);
+  const F = 'title,author_name,cover_i,edition_count,ratings_count,language';
+  const url = o => 'https://openlibrary.org/search.json?'+new URLSearchParams(o);
+  const mine = S.books.map(x=>normT(x.title)).filter(t=>t.length>3);
+  const good = d => !mine.some(t=>normT(d.title).includes(t)) && d.cover_i && d.title && d.title.length<70 && !REC_JUNK.test(d.title) && REC_LATIN.test(d.title) && !REC_FOREIGN.test(d.title) && (!d.language || d.language.includes('eng')) && (d.author_name||[]).length;
+  const byAuthor = a ? getJSON(url({author:a, fields:F, limit:25}), 9000).then(j=>(j.docs||[])
+      .filter(d=>good(d) && authorKey(d.author_name[0])===ak)
+      .sort((x,y)=>(y.ratings_count||0)-(x.ratings_count||0) || (y.edition_count||0)-(x.edition_count||0)).slice(0,4)
+      .map(d=>({title:d.title, author:d.author_name[0], cover:OLC(d.cover_i), kind:'author', tail:`another book by ${d.author_name[0]}`}))) : Promise.resolve([]);
+  const bySubject = getJSON(url({title:b.title.split(':')[0], ...(a?{author:a}:{}), fields:'subject', limit:1}), 9000).then(async j=>{
+    const s = pickSubject(j.docs?.[0]?.subject||[]); if(!s) return [];
+    const r = await getJSON(url({q:`subject:"${s.raw}" language:eng -subject:"juvenile fiction" -subject:"children's fiction"`, fields:F, sort:'rating', limit:25}), 9000);
+    return (r.docs||[]).filter(d=>good(d) && (d.ratings_count||0)>=10 && authorKey(d.author_name[0])!==ak).slice(0,3)
+      .map(d=>({title:d.title, author:d.author_name[0], cover:OLC(d.cover_i), kind:'theme', tail:s.tail}));
+  });
+  const [x, y] = await Promise.allSettled([byAuthor, bySubject]);
+  if(x.status==='rejected' && y.status==='rejected') throw x.reason;
+  const A = x.status==='fulfilled'?x.value:[], B = y.status==='fulfilled'?y.value:[], out=[];
+  for(let i=0;i<Math.max(A.length,B.length);i++){ if(A[i]) out.push(A[i]); if(B[i]) out.push(B[i]); }
+  return out;
+}
+async function ensureLive(force=false){
+  if(LIVE_BUSY || !navigator.onLine || !S || VIEW!=='home') return;
+  const now = Date.now();
+  if(!force && RS.liveFailAt && now-RS.liveFailAt < REC_BACKOFF) return; // Open Library was busy recently
+  const todo = recSources().slice(0, REC_LIVE_SOURCES).map(s=>s.b).filter(b=>{
+    const k = liveKey(b), c = RS.live[k];
+    if(c && now-c.t < (force ? 36e5 : REC_TTL)) return false;
+    return force || !LIVE_TRIED.has(k);
+  });
+  if(!todo.length) return;
+  todo.forEach(b=>LIVE_TRIED.add(liveKey(b)));
+  // only show "looking…" when there's nothing built-in to show for these books
+  const showWait = todo.some(b=>!CURATED_BY[normT(b.title)] && !RS.live[liveKey(b)]);
+  LIVE_BUSY = true; if(showWait) refreshRecsCard();
+  try{
+    // one book at a time, to be gentle on the free Open Library service; stop at the first failure
+    for(const b of todo){
+      try{ RS.live[liveKey(b)] = {t:Date.now(), items:await liveFor(b)}; delete RS.liveFailAt; }
+      catch(e){ RS.liveFailAt = Date.now(); console.warn('Suggestions: Open Library is busy or unreachable – using built-in picks.', e&&e.message); break; }
+    }
+    const keep = new Set(S.books.map(liveKey)); Object.keys(RS.live).forEach(k=>{ if(!keep.has(k)) delete RS.live[k]; });
+    saveRS();
+  } finally {
+    LIVE_BUSY = false;
+    // refresh quietly; built-in picks come first, so what's on screen rarely changes
+    if(VIEW==='home' && !$('#recsCard')?.contains(document.activeElement)) refreshRecsCard();
+  }
+}
+function startReading(id){
+  const b = S.books.find(x=>x.id===id); if(!b) return;
+  DRAFT = {...b, status:'reading', startDate:today(), currentPage:0, _new:false};
+  showEdit(false);
+  toast('Add the number of pages, then tap Save');
 }
 
 /* ===================== BOOK CLUB (mock) ===================== */
