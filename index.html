@@ -154,6 +154,11 @@ img.cover{color:transparent;font-size:0}
 #zxreader video{border-radius:12px}
 .status{padding:12px 14px;border-radius:12px;background:var(--surface2);margin-top:10px;font-weight:var(--wStrong)}
 .status.err{background:var(--accentSoft);color:var(--danger)}
+.status.camHelp{color:var(--ink);font-weight:400;line-height:1.5}
+.status.camHelp .h{color:var(--danger);font-weight:var(--wStrong);margin:0 0 6px}
+.status.camHelp ul{margin:6px 0 10px;padding-left:1.2em}
+.status.camHelp li{margin:0 0 8px}
+.status.camHelp .btn{margin-top:4px;width:100%}
 .status.ok{background:var(--successSoft);color:var(--successInk)}
 .result{border-top:1px solid var(--line);padding:14px 0}
 .result:first-child{border-top:0}
@@ -1296,7 +1301,7 @@ function gotCode(code){
 }
 $('#startScan').onclick = async ()=>{
   if(!window.isSecureContext && location.protocol!=='file:') scanMsg('The camera needs a secure (https) page. You can still upload a photo of the barcode below.','err');
-  if(!navigator.mediaDevices?.getUserMedia){ scanMsg('This browser cannot use the camera here. Please upload a photo of the barcode instead.','err'); return; }
+  if(!navigator.mediaDevices?.getUserMedia){ camHelp('none'); return; }
   const det = hasNative() ? await nativeDetector() : null;
   try{
     if(det){
@@ -1314,13 +1319,33 @@ $('#startScan').onclick = async ()=>{
       $('#stopScan').classList.remove('hide'); $('#startScan').classList.add('hide');
       scanMsg('Looking for a barcode…');
     }
-  }catch(e){ stopScan(); scanMsg('Could not start the camera: '+esc(e.message||e)+'. You can upload a photo of the barcode instead.','err'); }
+  }catch(e){ stopScan(); const n=e&&e.name||'', m=String(e&&e.message||e);
+    camHelp(n==='NotFoundError'||n==='OverconstrainedError'||/not ?found|no camera|requested device/i.test(m) ? 'nocam' : n==='NotAllowedError'||n==='SecurityError'||/permission|denied|not allowed/i.test(m) ? 'refused' : 'other'); }
 };
 $('#stopScan').onclick=()=>{ stopScan(); $('#scanStatus').classList.add('hide'); };
+// Plain-English help when the camera is refused or unavailable (iPhone/iPad Safari, Android Chrome, computers)
+function camHelp(kind){
+  const head = kind==='refused' ? '📷 Reading Buddy isn’t allowed to use the camera yet.'
+    : kind==='nocam' ? '📷 We couldn’t find a camera on this device.'
+    : kind==='none' ? '📷 This browser can’t use the camera here.'
+    : '📷 The camera couldn’t start.';
+  const steps = kind==='nocam' ? '' : `<p style="margin:0">To let Reading Buddy use the camera:</p><ul>
+      <li><b>iPhone or iPad (Safari):</b> tap <b>aA</b> at the left of the address bar, then <b>Website Settings</b>, and set <b>Camera</b> to <b>Allow</b>. (Or open the <b>Settings</b> app › <b>Safari</b> › <b>Camera</b> › <b>Allow</b>.)</li>
+      <li><b>Android phone or tablet (Chrome):</b> tap the small icon to the left of the web address, then <b>Permissions</b> › <b>Camera</b> › <b>Allow</b>.</li>
+      <li><b>Computer:</b> click the camera icon in the address bar and choose <b>Allow</b>.</li>
+    </ul><p style="margin:0 0 10px">Then tap <b>Start camera</b> again.</p>`;
+  scanMsg(`<p class="h">${head}</p>${steps}<p style="margin:0 0 6px"><b>Other ways to add your book:</b> upload a photo of the barcode just below, or type the title or ISBN instead.</p>
+    <button class="btn secondary" type="button" onclick="useSearchInstead()">⌨️ Type the title or ISBN instead</button>`, 'camHelp');
+}
+// The scanner library starts the camera preview with video.play() and doesn't catch it; pressing Stop then rejects that
+// promise ("play() request was interrupted"). That's harmless, so we quietly ignore exactly that one error.
+window.addEventListener('unhandledrejection', e=>{ const r=e.reason; if(r && r.name==='AbortError' && /play\(\) request was interrupted/i.test(r.message||'')) e.preventDefault(); });
+function useSearchInstead(){ const m=document.querySelector('.method[data-method=search]'); if(m) m.click(); const q=$('#q'); if(q){ q.scrollIntoView({block:'center'}); q.focus(); } }
 function stopScan(){
   clearInterval(scanTimer); scanTimer=null;
   if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
-  if(zx){ const z=zx; zx=null; z.stop().catch(()=>{}).finally(()=>{ try{z.clear();}catch(e){} }); }
+  if(zx){ const z=zx; zx=null; // stop() throws straight away if the camera never started (e.g. permission refused)
+    try{ Promise.resolve(z.stop()).catch(()=>{}).finally(()=>{ try{z.clear();}catch(e){} }); }catch(e){ try{z.clear();}catch(_){} } }
   $('#nativeBox')?.classList.add('hide'); $('#zxreader')?.classList.add('hide'); $('#stopScan')?.classList.add('hide'); $('#startScan')?.classList.remove('hide');
 }
 $('#barcodeFile').onchange = async e=>{
