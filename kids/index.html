@@ -3,11 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#F6F0E2">
+<meta name="theme-color" content="#FFF8F1">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Reading Buddy">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="description" content="A simple reading tracker for keen readers: log your books, see how many words you've read this year, and chat about the story so far. Demo content only.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Reading Buddy">
-<meta property="og:title" content="Reading Buddy – a prototype">
+<meta property="og:title" content="Reading Buddy for young readers – early prototype">
 <meta property="og:description" content="A simple reading tracker for keen readers: log your books, see how many words you've read this year, and chat about the story so far. Demo content only.">
 <meta property="og:locale" content="en_GB">
 <meta property="og:url" content="https://cwcj04.github.io/reading-buddy-prototype/kids/">
@@ -246,6 +253,30 @@ footer.demo{margin-top:20px;text-align:center}
 
 #protoPill{display:inline-block;font-size:.72rem;font-weight:var(--wStrong);padding:1px 8px;margin-left:2px;border-radius:99px;background:var(--surface2);color:var(--ink);border:1px solid var(--field);white-space:nowrap;vertical-align:1px}
 @media (max-width:359px){#protoPill{display:table;margin:3px 0 0}header h1 .dot{display:none}}
+/* ============ real profile: set-up, demo bar, settings ============ */
+body.setup nav.tabs{display:none}
+.grid2>div{min-width:0}
+.pinIn{width:100%;min-width:0;max-width:100%;box-sizing:border-box;padding-left:.5em!important}
+body.setup .app{padding-bottom:32px}
+.demoBar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--hl);color:var(--ink);border:2px dashed var(--ink2);border-radius:14px;padding:8px 10px 8px 12px;margin:8px 0 2px;font-size:.92rem}
+.demoBar .btn{min-height:48px;padding:8px 14px;font-size:.92rem}
+.setupCard h2{margin:2px 0 6px}
+.setupCard .wave{font-size:2.4rem;line-height:1}
+.grownup{background:var(--surface2);border-radius:14px;padding:12px 14px 14px;margin-top:18px}
+.grownup h3{margin:0 0 4px;font-size:1.05rem}
+.privacyLine{background:var(--heroSoft);border-radius:12px;padding:10px 12px;font-weight:var(--wStrong);margin:16px 0 12px}
+.setupLinks{display:grid;gap:8px;margin-top:4px}
+.setupLinks .btn{width:100%}
+.savedLine{display:inline-flex;align-items:center;gap:6px;font-size:.85rem;font-weight:var(--wStrong);color:var(--successInk);margin:0}
+.welcomeCard{border:2px solid var(--accent)}
+.a2hs .x2{float:right;min-height:44px;min-width:44px;margin:-6px -6px 0 6px;border:0;border-radius:10px;background:transparent;color:var(--ink);font-size:1.1rem;cursor:pointer}
+.a2hs ol{margin:6px 0 0;padding-left:1.3em}
+.setSec{border-top:1px solid var(--line);padding-top:12px;margin-top:16px}
+.setSec h3{margin:0 0 6px}
+.goalRow{display:flex;align-items:center;gap:12px}
+.goalRow .n{font-family:var(--fHead);font-weight:var(--wHead);font-size:1.3rem;min-width:7ch;text-align:center}
+.btn.danger{color:var(--danger);border-color:var(--danger);background:var(--surface)}
+.myClub .code{white-space:nowrap}
 /* ============ Young readers (Junior 8–12 / Teen 13–17) ============ */
 /* youth themes: brighter warm-white page, deep coral (or green) buttons that keep 7:1+ contrast;
    the bright coral/amber (--yPop, --success, --heroLine) is only ever used for decoration, never for text */
@@ -341,10 +372,11 @@ footer.demo{margin-top:20px;text-align:center}
   <header class="top">
     <div class="brand">
       <div class="logo" aria-hidden="true">📖</div>
-      <h1>Reading Buddy <small>for young readers<span class="dot"> · </span><span id="protoPill" title="An early prototype with demo data">Early prototype</span></small></h1>
+      <h1>Reading Buddy <small>for young readers<span class="dot"> · </span><span id="protoPill" title="An early prototype">Early prototype</span></small></h1>
     </div>
   </header>
 
+  <div id="demoBar" class="demoBar hide" role="region" aria-label="Demo mode"></div>
   <!-- ===== DASHBOARD ===== -->
   <section id="view-home" class="view" aria-label="Dashboard"></section>
 
@@ -447,6 +479,7 @@ footer.demo{margin-top:20px;text-align:center}
 
 <div class="overlay" id="overlay" role="dialog" aria-modal="true"><div class="sheet" id="sheet"></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<input type="file" id="restoreFile" accept=".json,application/json" class="hide" onchange="restoreBackup(this)" aria-label="Choose a backup file" tabindex="-1">
 
 <script>
 /* =====================================================================
@@ -466,9 +499,15 @@ const PROFILES=[
   {id:'adult', name:'Me', label:'Adult', blurb:'The classic Reading Buddy, with your books'},
   {id:'mia',   name:'Mia, 12', label:'Young reader', youth:true, blurb:'Demo young reader – her own books, badges and clubs'},
 ];
-let ACTIVE='mia'; // the kids app is the young-reader experience only (Mia is the demo reader)
-const isYouth = () => ACTIVE!=='adult';
-const pkey = (adultKey, suffix) => ACTIVE==='adult' ? adultKey : `readingBuddyKids.${ACTIVE}.${suffix}`;
+/* The kids app has one real reader ("me": her own name, books and PIN) and a demo reader (Mia).
+   Real data: readingBuddyKids.me.*   Demo data: readingBuddyKids.mia.*   (the adult app uses readingBuddy.* and is never touched)
+   Demo mode lasts for this visit only (sessionStorage), so the app always reopens to her own reading. */
+const ME='me', ME_PREFIX='readingBuddyKids.me.', ME_KEY=ME_PREFIX+'v1', DEMO_FLAG='readingBuddyKids.demoMode', TOAST_FLAG='readingBuddyKids.toast';
+let ACTIVE=(()=>{ try{ if(sessionStorage.getItem(DEMO_FLAG)==='1') return 'mia'; }catch(e){} return ME; })();
+const isYouth = () => true;
+const isDemo = () => ACTIVE==='mia';
+const hasMe = () => { try{ const m=JSON.parse(localStorage.getItem(ME_KEY)); return !!(m&&Array.isArray(m.books)); }catch(e){ return false; } };
+const pkey = (adultKey, suffix) => `readingBuddyKids.${ACTIVE}.${suffix}`;
 const storeKey = () => pkey(STORE_KEY,'v1'), themeKey = () => pkey(THEME_KEY,'theme'), fontKey = () => pkey(FONT_KEY,'font'), recKey = () => pkey(REC_KEY,'recs');
 const YTHEMES=[
   {id:'youth',      name:'Bright: Coral', rec:true, blurb:'Warm white page, deep coral buttons, sunny highlights', sw:['#FFF8F1','#FFFFFF','#1C1714','#8C2A12','#E8573A','#FFC94D']},
@@ -557,13 +596,21 @@ function demoRecall(wolf){
 }
 let S;
 function load(){
-  try{ S = JSON.parse(localStorage.getItem(storeKey())); }catch(e){ S=null; }
-  if(!S||!S.books) { S = isYouth() ? seedYouth() : seed(); save(); return; }
-  if(!isYouth() && !S.recalls){ // upgrade data saved by the earlier prototype
-    S.recalls=[]; const w=S.books.find(b=>b.demo&&b.title==='Wolf Hall'&&!b.notes); if(w) S.recalls=demoRecall(w); save();
-  }
+  let raw=null; try{ raw=localStorage.getItem(storeKey()); S=JSON.parse(raw); }catch(e){ S=null; }
+  if(isDemo()){ if(!S||!S.books){ S=seedYouth(); save(); } return; }
+  if(!S||!Array.isArray(S.books)){ // no profile yet → set-up screen. Never overwrite something we can't read.
+    if(raw){ try{ localStorage.setItem(ME_PREFIX+'unreadable', raw); }catch(e){} }
+    S=null; return; }
+  S.log=S.log||[]; S.recalls=S.recalls||[]; S.badgesSeen=S.badgesSeen||[]; S.clubs=S.clubs||[]; S.feed=S.feed||[]; S.comments=S.comments||[];
+  S.parent={comments:false, show13:false, pending:[], ...(S.parent||{})}; S.goal=S.goal||DEFAULT_GOAL; S.mode=S.mode==='teen'?'teen':'junior';
 }
-function save(){ try{ localStorage.setItem(storeKey(), JSON.stringify(S)); }catch(e){ console.warn('Could not save', e); } }
+function emptyKid(name, mode, pin){
+  return {v:1, real:true, name, mode, created:today(), books:[], log:[], goal:DEFAULT_GOAL, recalls:[], badgesSeen:[], clubs:[], feed:[], comments:[],
+    parent:{pin, comments:false, show13:false, pending:[]}};
+}
+let SAVE_WARNED=false;
+function save(){ if(!S) return; try{ localStorage.setItem(storeKey(), JSON.stringify(S)); }
+  catch(e){ if(!SAVE_WARNED){ SAVE_WARNED=true; toast('⚠️ Couldn’t save – this phone may be out of space. Save a backup in Settings.'); } } }
 function logToday(){ const t=today(); if(!S.log.includes(t)) S.log.push(t); }
 function streak(){
   const set = new Set(S.log); let d = new Date(); let n = 0;
@@ -585,17 +632,19 @@ function coverFail(img){
 /* ===================== navigation ===================== */
 let VIEW='home';
 function go(v){
-  VIEW=v;
+  if(!S) v='home';
+  VIEW=v; document.body.classList.toggle('setup', !S);
   $$('.view').forEach(s=>s.classList.toggle('hide', s.id!=='view-'+v));
   $$('.tab').forEach(t=>t.setAttribute('aria-selected', t.dataset.view===v));
   if (v!=='add') stopScan();
   render(); window.scrollTo(0,0);
 }
 $$('.tab').forEach(t=>t.onclick=()=>go(t.dataset.view));
-function render(){ if(VIEW==='home') renderHome(); if(VIEW==='books') renderBooks(); if(VIEW==='club') renderClub(); }
+function render(){ if(!S) return renderSetup(); if(VIEW==='home') renderHome(); if(VIEW==='books') renderBooks(); if(VIEW==='club') renderClub(); }
 
 /* ===================== DASHBOARD ===================== */
 function renderHome(){
+  if(!S) return renderSetup();
   if(isYouth()) return renderYouthHome();
   const Y = new Date().getFullYear(), ys = String(Y);
   const finished = S.books.filter(b=>b.status==='finished' && (b.finishDate||'').startsWith(ys));
@@ -718,8 +767,9 @@ function renderHome(){
 function readToday(){ logToday(); save(); renderHome(); toast('Lovely – reading logged for today'); }
 function setGoal(d){ S.goal=Math.max(1,(S.goal||DEFAULT_GOAL)+d); save(); renderHome(); }
 function resetDemo(){ if(!confirm('Reset Mia’s demo books, badges and clubs? This removes anything added on this device.')) return;
-  try{ localStorage.setItem(STORE_KEY, JSON.stringify(seed())); localStorage.setItem('readingBuddyKids.mia.v1', JSON.stringify(seedYouth()));
-    [THEME_KEY, FONT_KEY, REC_KEY, 'readingBuddyKids.mia.theme', 'readingBuddyKids.mia.font', 'readingBuddyKids.mia.recs'].forEach(k=>localStorage.removeItem(k)); }catch(e){}
+  if(!isDemo()) return;
+  try{ localStorage.setItem('readingBuddyKids.mia.v1', JSON.stringify(seedYouth()));
+    ['readingBuddyKids.mia.theme', 'readingBuddyKids.mia.font', 'readingBuddyKids.mia.recs'].forEach(k=>localStorage.removeItem(k)); }catch(e){}
   load(); RS=recStore(); PARENT_OK=false; applyTheme(currentTheme()); applyFont(currentFont()); applyChrome(); closeSheet(); go('home'); toast('Demo restored – books, badges, clubs, colours and lettering'); }
 
 /* ===================== MY BOOKS ===================== */
@@ -764,6 +814,7 @@ $('#overlay').addEventListener('click',e=>{ if(e.target.id==='overlay') closeShe
 document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeSheet(); });
 
 let DRAFT=null;
+const GENRES=['Adventure','Fantasy','Mystery','Real life','Funny','Scary','Science fiction','History','Animals','Sport','Graphic novel','Poetry','Non-fiction','Other'];
 function openEdit(id, quick=false){
   const b = S.books.find(x=>x.id===id); if(!b) return;
   DRAFT = {...b, _new:false}; showEdit(quick);
@@ -798,6 +849,11 @@ function showEdit(quick){
       <div><label class="f" for="e-words">Words (approx.)</label><input type="number" inputmode="numeric" min="0" id="e-words" value="${b.wordsOverride||''}" placeholder="${nf(words(b))}" oninput="updWords()"></div>
     </div>
     <p class="hint" id="e-wordhint"></p>
+    <div class="grid2">
+      <div><label class="f" for="e-genre">Kind of story</label><select id="e-genre"><option value="">Choose…</option>${GENRES.map(g=>`<option${b.genre===g?' selected':''}>${g}</option>`).join('')}</select></div>
+      <div><label class="f" for="e-series">Series <span class="muted" style="font-weight:400">(if any)</span></label><input type="text" id="e-series" maxlength="40" value="${esc(b.series||'')}" placeholder="e.g. Harry Potter"></div>
+    </div>
+    <p class="hint" style="margin-top:4px">Kind of story and series help you earn badges and get better book ideas.</p>
     <div class="grid2" id="dateWrap">
       <div><label class="f" for="e-start">Started</label><input type="date" id="e-start" value="${esc(b.startDate)}"></div>
       <div id="finWrap"><label class="f" for="e-finish">Finished</label><input type="date" id="e-finish" value="${esc(b.finishDate)}"></div>
@@ -833,6 +889,7 @@ function nudge(n){ const r=$('#e-page'); r.value=Math.min(+r.max,Math.max(0,+r.v
 function saveDraft(){
   const b=DRAFT;
   if($('#e-title')){ b.title=$('#e-title').value.trim()||'Untitled'; b.author=$('#e-author').value.trim(); }
+  if($('#e-genre')){ b.genre=$('#e-genre').value||''; b.series=$('#e-series').value.trim(); }
   if($('#e-pages')){ b.pages=+$('#e-pages').value||0; b.wordsOverride=+$('#e-words').value||null; b.startDate=$('#e-start').value; b.finishDate=b.status==='finished'?($('#e-finish').value||today()):''; }
   const prev = S.books.find(x=>x.id===b.id);
   const prevPage = prev ? (+prev.currentPage||0) : 0;
@@ -1127,6 +1184,7 @@ function recCandidates(){
     }
     if(!any) break;
   }
+  if(isYouth()) return out.concat(youthStarters(blocked, seen, friendKeys));
   if(!out.length){ // nothing logged yet (or every idea used up): book-club favourites
     curatedList().flatMap(x=>x[2]).forEach(c=>{ const k=normT(c.title); if(!blocked.has(k)&&!seen.has(k)&&!friendKeys.has(k)){ seen.add(k); out.push({...c, key:k, why:'A much-loved favourite with book clubs.', generic:true}); } });
   }
@@ -1383,7 +1441,11 @@ function switchProfile(id){
   toast(isYouth() ? `Hi ${S.name}! You’re in ${modeName()} mode` : 'Welcome back – here are your books');
 }
 function applyChrome(){
-  const y=isYouth();
+  const y=isYouth(), bar=$('#demoBar');
+  if(isDemo()){ const me=hasMe();
+    bar.innerHTML=`<span>🧪 <b>Demo mode</b> – Mia is pretend.${me?' Your own books aren’t touched.':''}</span><button class="btn secondary" onclick="exitDemo()">← ${me?'Back to my reading':'Back to set-up'}</button>`;
+    bar.classList.remove('hide'); }
+  else { bar.classList.add('hide'); bar.innerHTML=''; }
   if(y) document.documentElement.setAttribute('data-profile','youth'); else document.documentElement.removeAttribute('data-profile');
   $('#clubTabLbl').textContent = y ? 'Clubs' : 'Book club';
 }
@@ -1472,7 +1534,7 @@ function youthBadges(){
   const genres=[...new Set(fin.map(b=>b.genre).filter(Boolean))];
   const ser={}; fin.forEach(b=>{ if(b.series) ser[b.series]=(ser[b.series]||0)+1; });
   const topSer=Object.entries(ser).sort((a,b)=>b[1]-a[1])[0];
-  const quests=(S.recalls||[]).length, st=streak(), best=Math.max(bestRun(), st), champ=isChampion();
+  const quests=(S.recalls||[]).length, st=streak(), best=Math.max(bestRun(), st), champ=isDemo()&&isChampion();
   const race=(S.clubs||[]).find(c=>c.race);
   return [
     {id:'harder', em:'🧗', name:'Harder book', got:!!harder, how: harder?`You stepped up with ${harder.title}`:'Finish a book 20% longer than your usual'},
@@ -1480,7 +1542,8 @@ function youthBadges(){
     {id:'quest',  em:'🗺️', name:'Book quest', got:quests>0, how: quests?`${quests} quest${quests===1?'':'s'} done`:'Finish a Book quest'},
     {id:'week',   em:'🔥', name:'Week streak', got:best>=7, how: best>=7?'7 days in a row':`${Math.min(st,7)} of 7 days`, prog:best>=7?null:[Math.min(st,7),7]},
     {id:'series', em:'📚', name:'Series finisher', got:!!topSer&&topSer[1]>=3, how: topSer&&topSer[1]>=3?`3 in ${topSer[0]}`:`Read 3 in one series`, prog:topSer&&topSer[1]>=3?null:[topSer?topSer[1]:0,3]},
-    {id:'champ',  em:'🏆', name:'Club champion', got:champ, how: champ?`First to finish in ${race?race.name:'your club'}`:'Be first to finish a club book'},
+    isDemo() ? {id:'champ',  em:'🏆', name:'Club champion', got:champ, how: champ?`First to finish in ${race?race.name:'your club'}`:'Be first to finish a club book'}
+             : {id:'first',  em:'📗', name:'First finish', got:fin.length>0, how: fin.length?`You finished ${fin[0].title}`:'Finish your first book'},
   ];
 }
 function badgeHTML(x){
@@ -1528,20 +1591,23 @@ function renderYouthHome(){
   const badges=youthBadges(), got=badges.filter(b=>b.got).length;
   const longest=[...finished].sort((a,b)=>(+b.pages||0)-(+a.pages||0))[0];
   const genresRead=new Set(S.books.filter(b=>b.status==='finished').map(b=>b.genre).filter(Boolean)).size;
-  const board=challengeBoard(), myRank=board.findIndex(p=>p.you)+1;
+  const board=isDemo()?challengeBoard():[], myRank=board.findIndex(p=>p.you)+1, real=!isDemo();
   const readToday=set.has(today());
   const hour=new Date().getHours(), hello=hour<12?'Morning':hour<18?'Hi':'Evening';
   const newBadge=badges.find(b=>b.got && !S.badgesSeen.includes(b.id));
   $('#view-home').innerHTML = `
     <div class="yHello"><h2>${hello}, ${esc(S.name)} 👋</h2><span class="modeTag">${S.mode==='teen'?'Teen mode':'Junior mode · parent-managed'}</span></div>
     ${S.seeded?`<div class="banner small" style="padding:8px 12px">🧪 <b>Demo reader</b> – sample books, badges and clubs.</div>`:''}
+    ${real?`<p class="savedLine" id="savedLine">✓ Saved on this phone</p>`:''}
+    ${real&&!S.books.length?welcomeCardHTML():''}
+    ${real?a2hsTipHTML('home'):''}
     <div class="card hero">
       <div class="lbl">Your reading in ${Y}</div>
       <div class="figs">
         <div class="fig"><div class="big">${finished.length}</div><div class="u">${finished.length===1?'book':'books'} read</div>${reading.length?`<div class="sub">+${reading.length} on the go</div>`:''}</div>
         <div class="fig"><div class="big">${wFig.n}</div><div class="u">${wFig.u}</div><div class="sub">approx., ${WORDS_PER_PAGE} a page</div></div>
       </div>
-      <div class="fun">${hp>=1?`That’s like reading <i>Harry Potter and the Philosopher’s Stone</i> <b>${hp.toFixed(1).replace(/\.0$/,'')} times</b>! ⚡`:`That’s <b>${Math.round(hp*100)}%</b> of a <i>Harry Potter</i> book so far.`}</div>
+      <div class="fun">${wYear===0?`Your first book starts the count. 📚`:hp>=1?`That’s like reading <i>Harry Potter and the Philosopher’s Stone</i> <b>${hp.toFixed(1).replace(/\.0$/,'')} times</b>! ⚡`:`That’s <b>${Math.round(hp*100)}%</b> of a <i>Harry Potter</i> book so far.`}</div>
     </div>
     ${questCardHTML()}
 
@@ -1549,7 +1615,7 @@ function renderYouthHome(){
       <h3>🔥 Reading streak</h3>
       <div class="big num">${st} day${st===1?'':'s'} in a row</div>
       <div class="streak" aria-label="Last 7 days">${last7.map(d=>`<span class="${set.has(isoDay(d))?'on':''}">${d.toLocaleDateString('en-GB',{weekday:'short'}).slice(0,2)}</span>`).join('')}</div>
-      ${!readToday?`<div class="yNudge">${st===6&&best<7?'Read today to make it <b>7</b> and earn the <b>Week streak</b> badge! 🔥':`Read today to keep your streak going.`}</div>`:''}
+      ${!readToday?`<div class="yNudge">${st===6&&best<7?'Read today to make it <b>7</b> and earn the <b>Week streak</b> badge! 🔥':st===0?'Read today to start a streak. 🔥':`Read today to keep your streak going.`}</div>`:''}
       <button class="btn block" style="margin-top:12px" onclick="youthReadToday()">${readToday?'✅ You read today – nice one':'📖 I read today'}</button>
     </div>
 
@@ -1592,11 +1658,11 @@ function renderYouthHome(){
       </div>
     </div>
 
-    <div class="card">
+    ${real?myChallengeHTML(finished.length, goal):`<div class="card">
       <h3>🏁 Challenge board</h3>
       <p style="margin-top:0">You’re <b>${ord(myRank)}</b> of ${board.length} – ranked by effort: how close each person is to <b>their own</b> goal.</p>
       <button class="btn secondary block" onclick="go('club')">See the board and my clubs</button>
-    </div>
+    </div>`}
 
     ${recsCardHTML()}
 
@@ -1622,12 +1688,19 @@ function renderYouthHome(){
       </div>
     </div>
 
-    <div class="card" id="parentCard">
+    ${real?`<div class="card" id="settingsCard">
+      <h3>⚙️ Settings</h3>
+      <p class="small muted" style="margin-top:0">Your name, your goal, backups and Start again.</p>
+      <button class="btn block" onclick="openSettings()">⚙️ Open settings</button>
+      <button class="btn secondary block" style="margin-top:10px" onclick="openParent()">🔒 Parent controls</button>
+    </div>
+    <footer class="demo card"><p class="small muted">Early prototype. ✓ ${esc(S.name)}’s books are saved on this phone only. Book searches look titles up on Open Library and Google Books, but your name and reading list are never sent anywhere. Save a backup in Settings now and then.</p></footer>`
+    :`<div class="card" id="parentCard">
       <h3>🔒 Parent controls</h3>
       <p class="small muted" style="margin-top:0">For grown-ups: approve clubs and friends, switch comments on or off, choose Junior or Teen mode and see progress.</p>
       <button class="btn secondary block" onclick="openParent()">🔒 Open parent controls</button>
     </div>
-    <footer class="demo card"><p class="small muted">Mia is a demo reader, not a real person. This is an early prototype: everything is saved on this device only. A parent can reset the demo in Parent controls.</p></footer>`;
+    <footer class="demo card"><p class="small muted">Mia is a demo reader, not a real person. Demo data is kept separately and never mixes with your own reading. A parent can reset the demo in Parent controls.</p></footer>`}`;
   if(newBadge){ S.badgesSeen.push(newBadge.id); save(); setTimeout(()=>toast(`🏅 New badge: ${newBadge.name}!`),300); }
 }
 
@@ -1655,13 +1728,40 @@ const Y_CURATED = [
     ypk('Auggie & Me','R. J. Palacio','yc:auggie','three more Wonder stories, told by other characters')]],
 ];
 const Y_CURATED_BY = Object.fromEntries(Y_CURATED.map(([t,a,list])=>[normT(t), list]));
+const Y_STARTERS = [
+  ypk('Wonder','R. J. Palacio','yc:wonder','a funny, kind story about starting a new school',{genre:'Real life'}),
+  ypk('Holes','Louis Sachar','yc:holes','a clever mystery at a very strange summer camp',{genre:'Adventure'}),
+  ypk("Harry Potter and the Philosopher's Stone",'J. K. Rowling','yc:hp1','the start of the most famous school of magic',{genre:'Fantasy'}),
+  ypk('Percy Jackson and the Lightning Thief','Rick Riordan','yc:percy','Greek myths, monsters and lots of jokes',{genre:'Fantasy'}),
+  ypk('Skandar and the Unicorn Thief','A. F. Steadman','yc:skandar','fierce unicorns and an epic adventure – book 1 of a series',{genre:'Fantasy'}),
+  ypk('Murder Most Unladylike','Robin Stevens','yc:mmu','two schoolgirl detectives solve a real murder',{genre:'Mystery'}),
+  ypk('Nevermoor','Jessica Townsend','yc:nevermoor','a magical city, a cursed girl and a brilliant hotel',{genre:'Fantasy'}),
+  ypk('The Lion, the Witch and the Wardrobe','C. S. Lewis','yc:lww','a classic – step through the wardrobe into Narnia',{genre:'Fantasy'}),
+  ypk('Northern Lights','Philip Pullman','yc:nl','a big, brave fantasy – a bit longer, and very gripping',{genre:'Fantasy', step:true}),
+  ypk('Goodnight Mister Tom','Michelle Magorian','yc:tom','a moving wartime story about an evacuee – have tissues ready',{genre:'History', step:true}),
+  ypk('The Hunger Games','Suzanne Collins','yc:hunger','tense and more grown-up, with a brave, clever heroine',{genre:'Science fiction', step:true}),
+  ypk('The Book Thief','Markus Zusak','yc:thief','longer (560 pages) and more grown-up – many readers’ favourite book ever',{genre:'History', step:true}),
+  ypk("A Good Girl's Guide to Murder",'Holly Jackson','yc:agggtm','a gripping modern mystery written for teenagers',{genre:'Mystery', step:true, teen:true}),
+];
+const GENRE_WORDS = {'Fantasy':'fantasy stories','Mystery':'mysteries','Real life':'real-life stories','Adventure':'adventure stories','History':'stories set in the past','Science fiction':'science fiction','Funny':'funny books','Scary':'scary stories','Animals':'animal stories','Sport':'sport stories'};
+function youthStarters(blocked, seen, friendKeys){ // ranked by what she has actually read
+  const mine=S.books.filter(b=>b.status!=='want'), byG={}, byA={};
+  mine.forEach(b=>{ if(b.genre) (byG[b.genre]=byG[b.genre]||[]).push(b); const a=authorKey(b.author); if(a&&!byA[a]) byA[a]=b; });
+  return Y_STARTERS.map((c,i)=>{ const a=byA[authorKey(c.author)], g=c.genre&&byG[c.genre];
+    const why = a ? `Because you read <b>${esc(a.title)}</b> – another book by ${esc(c.author)}: ${esc(c.tail)}.`
+      : g ? `Because you like ${GENRE_WORDS[c.genre]||esc(c.genre.toLowerCase())+' books'}, like <b>${esc(g[0].title)}</b> – ${esc(c.tail)}.`
+      : `A favourite with readers your age – ${esc(c.tail)}.`;
+    return {...c, why, generic:!a&&!g, score:a?3:g?1+g.length/10:0, i}; })
+    .sort((x,y)=>y.score-x.score||x.i-y.i)
+    .filter(c=>{ const k=normT(c.title); if(blocked.has(k)||seen.has(k)||friendKeys.has(k)) return false; seen.add(k); c.key=k; return true; });
+}
 const Y_FRIENDS = [
   {title:'Goodnight Mister Tom', author:'Michelle Magorian', cover:'yc:tom', who:'Grandma Rose', club:'The Family Shelf', quote:'I read this when I was your age. Have tissues ready!'},
   {title:'Nevermoor', author:'Jessica Townsend', cover:'yc:nevermoor', who:'Aisha', club:'Bookworms', quote:'If you like Skandar you’ll love this. Morrigan is the best.'},
 ];
 const curatedList = () => isYouth() ? Y_CURATED : CURATED;
 const curatedBy   = () => isYouth() ? Y_CURATED_BY : CURATED_BY;
-const friendPicks = () => isYouth() ? Y_FRIENDS : FRIEND_PICKS;
+const friendPicks = () => !isDemo() ? [] : isYouth() ? Y_FRIENDS : FRIEND_PICKS;
 function recFindHTML(c){
   if(isJunior()) return '';  // Junior: no shop links (one library tip under the list instead)
   return `<div class="findRow"><span class="lbl">Find it:</span>${findLinks(c)}</div>`;
@@ -1672,16 +1772,16 @@ function youthRecsCardHTML(){
   const raw = recCandidates(), all = raw.filter(c=>allow13 || !c.teen), hid13 = raw.length-all.length;
   const off = RS.offset||0, page = (l,n) => l.length<=n ? l : l.slice((off*n)%l.length).concat(l).slice(0,n);
   const like = page(all.filter(c=>!c.step),3), steps = page(all.filter(c=>c.step),isJunior()?2:3), blocked = recBlocked();
-  const friends = Y_FRIENDS.filter(f=>!blocked.has(normT(f.title))).map(f=>({...f, key:normT(f.title), friend:true,
+  const friends = friendPicks().filter(f=>!blocked.has(normT(f.title))).map(f=>({...f, key:normT(f.title), friend:true,
     why:`💬 Recommended by <b>${esc(f.who)}</b> in ${esc(f.club)}<span class="quote">“${esc(f.quote)}”</span>`}));
   const nHidden = RS.dismissed.length;
   return `<section class="card recs" id="recsCard" aria-labelledby="recsH">
     <div class="recsHead">
       <div><h3 id="recsH">⛰️ Ready for a challenge?</h3>
-      <p class="recsLead">Books picked from what you’ve read – plus <b>step-up</b> picks that are a bit longer or harder.</p></div>
+      <p class="recsLead">${like.length&&like.every(c=>c.generic)?'Great books to start with – add books you’ve read and these will change to match you':'Books picked from what you’ve read'} – plus <b>step-up</b> picks that are a bit longer or harder.</p></div>
       <button class="btn secondary recRefresh" onclick="refreshRecs()">↻ More ideas</button>
     </div>
-    ${like.length?`<h4 class="recSub" style="border-top:0;padding-top:4px">More like what you love</h4><div class="recList">${like.map(recItemHTML).join('')}</div>`:''}
+    ${like.length?`<h4 class="recSub" style="border-top:0;padding-top:4px">${like.every(c=>c.generic)?'Great books to start with':'More like what you love'}</h4><div class="recList">${like.map(recItemHTML).join('')}</div>`:''}
     ${steps.length?`<h4 class="recSub">⛰️ Step-up picks</h4><div class="recList">${steps.map(recItemHTML).join('')}</div>`:''}
     ${friends.length?`<h4 class="recSub">From your clubs</h4><div class="recList">${friends.map(recItemHTML).join('')}</div>`:''}
     ${isJunior()?`<p class="yTip">🏛️ Like the look of one? Ask a grown-up, or look for it at your school or local library.</p>`:''}
@@ -1693,6 +1793,7 @@ function youthRecsCardHTML(){
 /* ---------- clubs: invite-only, effort board, reactions (Junior) / short comments (Teen) ---------- */
 function commentsOn(){ return S.mode==='teen' && S.parent?.comments; }
 function renderYouthClub(){
+  if(!isDemo()) return renderMyClubs();
   const board=challengeBoard(), junior=isJunior();
   $('#view-club').innerHTML = `
     <h2>Clubs</h2>
@@ -1760,6 +1861,12 @@ function postComment(club){
   S.comments.push({club, who:'Mia', text:v, d:today()}); save(); rerenderClubKeep(club); toast('Posted to your club');
 }
 function joinClub(){
+  if(!isDemo()){
+    const code=($('#inviteCode').value||'').trim().toUpperCase(), m=$('#joinMsg');
+    if(!code){ toast('Type the invite code first'); $('#inviteCode').focus(); return; }
+    m.className='status'; m.innerHTML=`🔜 Thanks! Joining a club with a code like <span class="code">${esc(code)}</span> will work when clubs with friends on other phones arrive${isJunior()?' (a grown-up will approve it then)':''}. Nothing was sent anywhere.`;
+    return;
+  }
   const code=($('#inviteCode').value||'').trim().toUpperCase(), c=DEMO_CODES[code];
   if(!c){ toast('We couldn’t find that code – check it with whoever invited you'); return; }
   if(S.clubs.some(x=>x.id===c.id)){ toast(`You’re already in ${c.name}`); return; }
@@ -1771,20 +1878,107 @@ function joinClub(){
   toast(`You’ve joined ${c.name}. Your parent can see this in Parent controls.`);
 }
 
-/* ---------- parent controls (demo PIN) ---------- */
-function openParent(){
-  if(PARENT_OK) return showParent();
+function myChallengeHTML(done, goal){
+  const pct=Math.min(100,Math.round(100*done/Math.max(1,goal)));
+  return `<div class="card" id="myChallenge">
+      <h3>🏁 My challenge</h3>
+      <p style="margin-top:0"><b>${done} of ${goal} books</b> this year – <b>${pct}%</b> of my goal.</p>
+      <div class="progress" aria-label="${pct}% of my goal"><i style="width:${pct}%"></i></div>
+      <p class="small muted" style="margin:8px 0 0">🔜 <b>Coming soon: challenge friends.</b> Everyone will be ranked by effort – how close they are to their <b>own</b> goal.</p>
+    </div>`;
+}
+function renderMyClubs(){
+  const ys=String(new Date().getFullYear()), done=S.books.filter(b=>b.status==='finished'&&(b.finishDate||'').startsWith(ys)).length;
+  const choices=S.books.filter(b=>b.status!=='finished');
+  $('#view-club').innerHTML = `
+    <h2>Clubs</h2>
+    <div class="banner">🔜 <b>Clubs with friends on other phones are coming soon.</b> For now, Reading Buddy is just for your own reading – nothing is shared or sent anywhere.</div>
+    ${myChallengeHTML(done, S.goal||DEFAULT_GOAL)}
+    ${S.clubs.map(myClubHTML).join('')}
+    <div class="card">
+      <h3>➕ Start a club</h3>
+      <p class="small" style="margin-top:0">Give it a name and pick a book. You’ll be able to invite friends when clubs go live.</p>
+      <label class="f" for="nc-name">Club name</label>
+      <input type="text" id="nc-name" maxlength="30" placeholder="e.g. The Bookworms" autocomplete="off">
+      <label class="f" for="nc-book">Book to read together</label>
+      <select id="nc-book"><option value="">Choose later</option>${choices.map(b=>`<option value="${b.id}">${esc(b.title)}</option>`).join('')}</select>
+      <button class="btn block" style="margin-top:12px" onclick="createClub()">Create club</button>
+    </div>
+    <div class="card">
+      <h3>🔑 Got an invite code?</h3>
+      <label class="f" for="inviteCode">Invite code</label>
+      <div class="row"><input type="text" id="inviteCode" placeholder="e.g. ABC-1234" autocomplete="off" autocapitalize="characters" style="flex:1 1 180px"><button class="btn" onclick="joinClub()">Join</button></div>
+      <div id="joinMsg" class="hide" role="status"></div>
+    </div>
+    <div class="card"><p class="small muted" style="margin:0">🛡️ Private by default: no public profile, no strangers, no location, no ads.</p>
+      <button class="btn secondary block" style="margin-top:10px" onclick="openParent()">🔒 Parent controls</button></div>`;
+}
+function myClubHTML(c){
+  const b=S.books.find(x=>x.id===c.bookId), p=b?(b.status==='finished'?100:pctOf(b)):0;
+  return `<div class="card myClub" id="club-${c.id}">
+    <h3 style="margin:0">👯 ${esc(c.name)}</h3>
+    <p class="small muted" style="margin:2px 0 0">Your club · code <span class="code">${esc(c.code)}</span> – for sharing when clubs go live</p>
+    <p class="small" style="margin:8px 0 0"><b>Members:</b> just you for now</p>
+    ${b?`<div class="book" style="margin-top:12px">${coverHTML(b,'cover sm')}<div class="meta"><div class="small muted">Reading together</div><div class="title">${esc(b.title)}</div>
+      <div class="progress" aria-label="${p}% read"><i style="width:${p}%"></i></div><div class="small">${p>=100?'Finished! 🎉':`${p}% read`}</div></div></div>`
+      :`<p class="small muted">No book chosen yet.</p>`}
+    <button class="btn ghost block" style="margin-top:10px" onclick="removeClub('${c.id}')">Remove this club</button>
+  </div>`;
+}
+function createClub(){
+  const name=($('#nc-name').value||'').trim().slice(0,30);
+  if(!name){ toast('Give your club a name first'); $('#nc-name').focus(); return; }
+  const L='ABCDEFGHJKLMNPQRSTUVWXYZ', code=[0,1,2].map(()=>L[Math.floor(Math.random()*L.length)]).join('')+'-'+String(Math.floor(1000+Math.random()*9000));
+  S.clubs.push({id:uid(), mine:true, kind:'Your own', name, code, bookId:$('#nc-book').value||'', created:today()}); save(); renderMyClubs();
+  toast(`Club created: ${name}`);
+}
+function removeClub(id){ const c=S.clubs.find(x=>x.id===id); if(!c||!confirm(`Remove the club “${c.name}”? Your books stay safe.`)) return;
+  S.clubs=S.clubs.filter(x=>x.id!==id); save(); renderMyClubs(); toast('Club removed'); }
+
+/* ---------- parent controls (her own PIN; demo uses 1234) ---------- */
+async function hashPin(pin){
+  const t='readingBuddyKids:'+pin;
+  try{ const d=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t)); return 'h1:'+[...new Uint8Array(d)].map(x=>x.toString(16).padStart(2,'0')).join(''); }
+  catch(e){ let h=5381; for(const c of t) h=((h*33)^c.charCodeAt(0))>>>0; return 'h0:'+h.toString(16); }
+}
+async function pinOK(pin){ if(isDemo()) return pin===PARENT_PIN; return !!S.parent.pin && (await hashPin(pin))===S.parent.pin; }
+let PIN_NEXT=null;
+function askPin(title, lead, next){
+  PIN_NEXT=next;
   openSheet(`<button class="x" onclick="closeSheet()" aria-label="Close">✕</button>
-    <h2 style="margin-top:4px">🔒 Parent controls</h2>
-    <p>For parents and carers. Enter your PIN to continue.</p>
-    <label class="f" for="pin">PIN</label>
-    <input type="password" id="pin" class="pinIn" inputmode="numeric" maxlength="4" autocomplete="off" aria-describedby="pinHint">
-    <p class="hint" id="pinHint">Demo PIN: <b>1234</b> (shown here for the prototype only).</p>
+    <h2 style="margin-top:4px">🔒 ${title}</h2>
+    <p>${lead}</p>
+    <label class="f" for="pin">Grown-up’s PIN</label>
+    <input type="password" id="pin" class="pinIn" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" aria-describedby="pinHint">
+    <p class="hint" id="pinHint">${isDemo()?'Demo PIN: <b>1234</b> (shown here for the demo only).':'The 4-digit PIN a grown-up chose when Reading Buddy was set up.'}</p>
     <div id="pinErr" class="status err hide" role="alert">That PIN isn’t right – try again.</div>
     <button class="btn block" style="margin-top:12px" onclick="checkPin()">Unlock</button>`);
   setTimeout(()=>{ const p=$('#pin'); if(p){ p.focus(); p.addEventListener('keydown',e=>{ if(e.key==='Enter') checkPin(); }); } },80);
 }
-function checkPin(){ if(($('#pin').value||'')===PARENT_PIN){ PARENT_OK=true; showParent(); } else { $('#pinErr').classList.remove('hide'); $('#pin').value=''; $('#pin').focus(); } }
+function openParent(){
+  if(PARENT_OK) return showParent();
+  askPin('Parent controls', 'For parents and carers. Enter your PIN to continue.', ()=>{ PARENT_OK=true; showParent(); });
+}
+async function checkPin(){
+  const v=($('#pin')||{}).value||'';
+  if(await pinOK(v)){ const n=PIN_NEXT; PIN_NEXT=null; if(n) n(); }
+  else { $('#pinErr').classList.remove('hide'); $('#pin').value=''; $('#pin').focus(); }
+}
+function openChangePin(){
+  openSheet(`<button class="x" onclick="closeSheet()" aria-label="Close">✕</button>
+    <h2 style="margin-top:4px">🔑 Change the PIN</h2>
+    <div class="grid2"><div><label class="f" for="np1">New PIN</label><input type="password" id="np1" class="pinIn" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="new-password"></div>
+      <div><label class="f" for="np2">Type it again</label><input type="password" id="np2" class="pinIn" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="new-password"></div></div>
+    <div id="npErr" class="status err hide" role="alert"></div>
+    <button class="btn block" style="margin-top:12px" onclick="saveNewPin()">Save new PIN</button>
+    <button class="btn ghost block" style="margin-top:8px" onclick="showParent()">Cancel</button>`);
+}
+async function saveNewPin(){
+  const a=$('#np1').value, b=$('#np2').value, e=$('#npErr');
+  const bad = !/^\d{4}$/.test(a) ? 'The PIN needs to be exactly 4 numbers.' : a!==b ? 'Those two PINs don’t match – try again.' : '';
+  if(bad){ e.textContent=bad; e.classList.remove('hide'); return; }
+  S.parent.pin=await hashPin(a); save(); showParent(); toast('PIN changed');
+}
 function showParent(){
   const P=S.parent, ys=String(new Date().getFullYear()), junior=S.mode!=='teen';
   const fin=S.books.filter(b=>b.status==='finished'&&(b.finishDate||'').startsWith(ys)), rd=S.books.filter(b=>b.status==='reading');
@@ -1792,7 +1986,7 @@ function showParent(){
   const y=$('#sheet').scrollTop;
   openSheet(`<button class="x" onclick="closeSheet()" aria-label="Close">✕</button>
     <h2 style="margin-top:4px">🔓 Parent controls</h2>
-    <p class="muted" style="margin-top:0">Managing <b>${esc(S.name)}</b>, ${S.age}</p>
+    <p class="muted" style="margin-top:0">Managing <b>${esc(S.name)}</b>${isDemo()?`, ${S.age}`:` · ${modeName()} mode`}</p>
 
     <h3 style="margin-top:16px">Mode</h3>
     <div class="seg" style="grid-template-columns:1fr 1fr" role="group" aria-label="Age mode">
@@ -1804,11 +1998,11 @@ function showParent(){
       <div><b>Teen</b> – can join a club with an invite code (you’ll see it here) · short comments in invite-only clubs, if you allow them · shop links shown</div>
     </div>
 
-    <h3 style="margin-top:18px">Waiting for you ${P.pending.length?`<span class="tag rd">${P.pending.length}</span>`:''}</h3>
+    ${!isDemo()&&!P.pending.length?'':`<h3 style="margin-top:18px">Waiting for you ${P.pending.length?`<span class="tag rd">${P.pending.length}</span>`:''}</h3>
     ${P.pending.length?P.pending.map(x=>`<div class="pend"><b>${x.type==='club'?`🏫 Club invite: ${esc(x.name)}`:`👋 Friend request: ${esc(x.name)}`}</b>
       <p class="small" style="margin:4px 0 10px">${x.type==='club'?`From ${esc(x.from)} · code <span class="code">${esc(x.code)}</span>`:`${esc(x.from)} wants to join ${esc((S.clubs.find(c=>c.id===x.club)||{}).name||'a club')}`}</p>
       <div class="actions"><button class="btn" onclick="approve('${x.id}',true)">✓ Approve</button><button class="btn quiet" onclick="approve('${x.id}',false)">Decline</button></div></div>`).join('')
-      :`<p class="small muted">Nothing to approve right now.</p>`}
+      :`<p class="small muted">Nothing to approve right now.</p>`}`}
 
     <h3 style="margin-top:18px">Settings</h3>
     <div class="setRow"><div class="lbl"><b>Short comments in clubs</b><div class="small muted">${junior?'Never available in Junior mode – only reactions and stars.':'Only members of invite-only clubs can see them. Max 140 characters.'}</div></div>
@@ -1826,7 +2020,7 @@ function showParent(){
     <div class="streak" style="margin-top:10px" aria-label="Reading in the last 7 days">${last7.map(d=>`<span class="${set.has(isoDay(d))?'on':''}">${d.toLocaleDateString('en-GB',{weekday:'short'}).slice(0,2)}</span>`).join('')}</div>
     ${rd.map(b=>`<p class="small" style="margin-top:10px">📖 Reading <b>${esc(b.title)}</b> – page ${b.currentPage||0} of ${b.pages||'?'} (${pctOf(b)}%)</p>`).join('')}
     <p class="small">✓ Finished this year: ${fin.map(b=>esc(b.title)).join(', ')||'none yet'}</p>
-    <p class="small">📚 Clubs: ${S.clubs.map(c=>`${esc(c.name)} (${esc(c.kind)})`).join(', ')}</p>
+    <p class="small">📚 Clubs: ${S.clubs.map(c=>`${esc(c.name)} (${esc(c.kind)})`).join(', ')||'none yet'}</p>
 
     <div class="privacy" role="note">
       <p><b>🛡️ Privacy and consent</b></p>
@@ -1834,7 +2028,7 @@ function showParent(){
       <p>The ICO’s <b>Children’s Code</b> (the Age Appropriate Design Code) also expects apps for under-18s to be <b>private by default</b>. So young readers get no public profile, no location, no ads and no contact from strangers. Clubs are invite-only, and in Junior mode you approve every club and friend.</p>
       <p>In this prototype everything stays on this device.</p>
     </div>
-    <button class="btn ghost block" onclick="resetDemo()">↺ Reset demo data</button>
+    ${isDemo()?`<button class="btn ghost block" onclick="resetDemo()">↺ Reset demo data</button>`:`<button class="btn secondary block" onclick="openChangePin()">🔑 Change the PIN</button>`}
     <button class="btn block" style="margin-top:10px" onclick="PARENT_OK=false;closeSheet();toast('Parent controls locked')">🔒 Lock and close</button>`);
   $('#sheet').scrollTop=y;
 }
@@ -2013,13 +2207,17 @@ $('#startScan').onclick = async ()=>{
       $('#stopScan').classList.remove('hide'); $('#startScan').classList.add('hide');
       scanMsg('Looking for a barcode…');
     }
-  }catch(e){ stopScan(); scanMsg('Could not start the camera: '+esc(e.message||e)+'. You can upload a photo of the barcode instead.','err'); }
+  }catch(e){ stopScan();
+    const denied = e && (e.name==='NotAllowedError' || e.name==='SecurityError' || /permission|denied|not allowed/i.test(String(e.message||e)));
+    if(denied) scanMsg(`📷 Reading Buddy isn’t allowed to use the camera yet. ${isIOS()?'On iPhone: tap <b>aA</b> in Safari’s address bar › <b>Website Settings</b> › <b>Camera</b> › <b>Allow</b> (or Settings › Safari › Camera).':isAndroid()?'On Android: tap the icon to the left of the web address › <b>Permissions</b> › <b>Camera</b> › <b>Allow</b>.':'Allow the camera in your browser’s address bar.'} Then tap Start camera again – or upload a photo of the barcode below.`,'err');
+    else scanMsg('Could not start the camera: '+esc(e.message||e)+'. You can upload a photo of the barcode instead.','err'); }
 };
 $('#stopScan').onclick=()=>{ stopScan(); $('#scanStatus').classList.add('hide'); };
 function stopScan(){
   clearInterval(scanTimer); scanTimer=null;
   if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
-  if(zx){ const z=zx; zx=null; z.stop().catch(()=>{}).finally(()=>{ try{z.clear();}catch(e){} }); }
+  if(zx){ const z=zx; zx=null; // stop() throws straight away if the camera never started (e.g. permission refused)
+    try{ Promise.resolve(z.stop()).catch(()=>{}).finally(()=>{ try{z.clear();}catch(e){} }); }catch(e){ try{z.clear();}catch(_){} } }
   $('#nativeBox')?.classList.add('hide'); $('#zxreader')?.classList.add('hide'); $('#stopScan')?.classList.add('hide'); $('#startScan')?.classList.remove('hide');
 }
 $('#barcodeFile').onchange = async e=>{
@@ -2036,9 +2234,202 @@ $('#barcodeFile').onchange = async e=>{
   finally{ e.target.value=''; }
 };
 
+/* ===================== first run, demo mode, settings, backups ===================== */
+function switchTo(id, msg){
+  try{ if(id==='mia') sessionStorage.setItem(DEMO_FLAG,'1'); else sessionStorage.removeItem(DEMO_FLAG); }catch(e){}
+  ACTIVE=id; PARENT_OK=false; PIN_NEXT=null; load(); RS=recStore(); REC_VIEW={};
+  applyTheme(currentTheme()); applyFont(currentFont()); applyChrome(); closeSheet(); go('home'); if(msg) toast(msg);
+}
+function enterDemo(){ switchTo('mia', 'Demo mode – this is Mia’s pretend reading'); }
+function exitDemo(){ switchTo(ME, hasMe() ? `Welcome back, ${(peek(ME_KEY)||{}).name||''}!` : ''); }
+let SU_BAND='junior';
+function renderSetup(){
+  document.body.classList.add('setup');
+  $$('.view').forEach(x=>x.classList.toggle('hide', x.id!=='view-home'));
+  $('#view-home').innerHTML = `
+    <div class="card setupCard" id="setupCard">
+      <div class="wave" aria-hidden="true">👋📚</div>
+      <h2>Welcome to Reading Buddy!</h2>
+      <p style="margin-top:0">Keep track of the books you read, build a reading streak and earn badges for effort.</p>
+      <label class="f" for="su-name">What should we call you?</label>
+      <input type="text" id="su-name" maxlength="20" autocomplete="given-name" autocapitalize="words" enterkeyhint="next" placeholder="First name or nickname" aria-describedby="su-nameHint">
+      <p class="hint" id="su-nameHint">Just a first name or a nickname – no surname needed.</p>
+      <label class="f" id="su-bandL">Which fits you?</label>
+      <div class="seg" role="group" aria-labelledby="su-bandL" style="grid-template-columns:1fr 1fr">
+        <button type="button" data-band="junior" aria-pressed="${SU_BAND==='junior'}" onclick="setSuBand('junior')">Junior (8–12)</button>
+        <button type="button" data-band="teen" aria-pressed="${SU_BAND==='teen'}" onclick="setSuBand('teen')">Teen (13–17)</button>
+      </div>
+      <div class="grownup">
+        <h3>🔒 Grown-up: set a 4-digit PIN</h3>
+        <p class="small" style="margin:0 0 4px">The PIN opens Parent controls and is needed to “Start again”. Please keep it to yourself.</p>
+        <div class="grid2">
+          <div><label class="f" for="su-pin">PIN</label><input type="password" id="su-pin" class="pinIn" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="new-password"></div>
+          <div><label class="f" for="su-pin2">Type it again</label><input type="password" id="su-pin2" class="pinIn" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="new-password"></div>
+        </div>
+      </div>
+      <div id="su-err" class="status err hide" role="alert"></div>
+      <p class="privacyLine">🔒 Your books are saved on this phone only. Nothing is sent anywhere.</p>
+      <button class="btn big block" id="su-go" onclick="createMe()">Let’s go! →</button>
+    </div>
+    ${a2hsTipHTML('setup')}
+    <div class="setupLinks">
+      <button class="btn quiet" onclick="enterDemo()">👀 Just looking? See the demo</button>
+      <button class="btn quiet" onclick="$('#restoreFile').click()">📂 Moving phones? Restore from a backup</button>
+    </div>
+    <p class="small muted" style="text-align:center;margin-top:14px">Early prototype</p>`;
+}
+function setSuBand(b){ SU_BAND=b; $$('#setupCard [data-band]').forEach(x=>x.setAttribute('aria-pressed', x.dataset.band===b)); }
+async function createMe(){
+  const name=($('#su-name').value||'').trim().replace(/\s+/g,' ').slice(0,20), a=$('#su-pin').value, b=$('#su-pin2').value, e=$('#su-err');
+  const bad = !name ? ['su-name','Please type a first name or nickname.']
+    : !/^\d{4}$/.test(a) ? ['su-pin','The grown-up’s PIN needs to be exactly 4 numbers.']
+    : a!==b ? ['su-pin2','The two PINs don’t match – please type it again.'] : null;
+  if(bad){ e.textContent=bad[1]; e.classList.remove('hide'); const f=$('#'+bad[0]); if(bad[0]==='su-pin2') f.value=''; f.focus(); return; }
+  if(hasMe()){ switchTo(ME); return; } // never overwrite an existing profile (e.g. set up in another tab)
+  ACTIVE=ME; S=emptyKid(name, SU_BAND, await hashPin(a)); save();
+  if(!hasMe()){ e.textContent='Sorry – this browser won’t let Reading Buddy save. Check it isn’t in Private Browsing mode.'; e.classList.remove('hide'); S=null; return; }
+  try{ sessionStorage.removeItem(DEMO_FLAG); }catch(_){}
+  RS=recStore(); applyTheme(currentTheme()); applyFont(currentFont()); applyChrome(); requestPersist(); go('home');
+  toast(`Welcome, ${name}! Add your first book to get started.`);
+}
+function welcomeCardHTML(){
+  return `<div class="card welcomeCard" id="welcomeCard">
+    <h3>📚 Add your first book</h3>
+    <p style="margin-top:0">Start with the book you’re reading now – or one you’ve finished and loved. Scan the barcode, take a photo of the cover, or search by title.</p>
+    <button class="btn big block" onclick="go('add')">➕ Add your first book</button>
+  </div>`;
+}
+
+/* --- keep it safe: persistent storage, Home Screen tip, backups --- */
+const BACKUP_KEY=ME_PREFIX+'lastBackup', A2HS_KEY=ME_PREFIX+'a2hsHidden';
+let PERSISTED=null, INSTALL_EVT=null;
+function requestPersist(){
+  try{ if(!(navigator.storage&&navigator.storage.persist)) return;
+    navigator.storage.persisted().then(p=>p||navigator.storage.persist()).then(v=>{ PERSISTED=!!v; const el=$('#persistNote'); if(el) el.innerHTML=persistHTML(); }).catch(()=>{});
+  }catch(e){}
+}
+const persistHTML = () => PERSISTED===true ? '✓ This browser has agreed to keep your books safe' : PERSISTED===false ? 'This browser may clear website data if the phone runs low on space – so save a backup now and then.' : '';
+const isStandalone = () => { try{ return matchMedia('(display-mode: standalone)').matches || navigator.standalone===true; }catch(e){ return false; } };
+const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+const isAndroid = () => /Android/i.test(navigator.userAgent);
+const IOS_STEPS = `<ol><li>In <b>Safari</b>, tap the <b>Share</b> button <span aria-hidden="true">(□↑)</span>.</li><li>Scroll down and tap <b>Add to Home Screen</b>, then <b>Add</b>.</li><li>Open Reading Buddy from the new icon.</li></ol>`;
+const ANDROID_STEPS = `<ol><li>In <b>Chrome</b>, tap the <b>⋮</b> menu (top right).</li><li>Tap <b>Add to Home screen</b> (or <b>Install app</b>), then <b>Install</b> or <b>Add</b>.</li><li>Open Reading Buddy from the new icon.</li></ol>`;
+function a2hsTipHTML(where){
+  if(isStandalone()) return '';
+  const hidden = (()=>{ try{ return localStorage.getItem(A2HS_KEY)==='1'; }catch(e){ return false; } })();
+  if(where==='home' && hidden) return '';
+  const phone=isIOS()||isAndroid();
+  if(where!=='settings' && !phone && !INSTALL_EVT) return '';
+  const x = where==='home' ? `<button class="x2" onclick="hideA2hs()" aria-label="Hide this tip">✕</button>` : '';
+  const install = INSTALL_EVT ? `<button class="btn secondary block" style="margin-top:8px" onclick="installApp()">📲 Install Reading Buddy</button>` : '';
+  const body = isIOS() ? `${IOS_STEPS}<p class="small" style="margin:6px 0 0">On iPhone, the Home Screen app keeps its <b>own</b> copy of your books – so add it first, then set up and add books from the icon.</p>`
+    : isAndroid() ? ANDROID_STEPS
+    : `<p style="margin:6px 0 0"><b>iPhone:</b></p>${IOS_STEPS}<p style="margin:6px 0 0"><b>Android:</b></p>${ANDROID_STEPS}`;
+  return `<div class="${where==='settings'?'':'card '}yTip a2hs" id="a2hsTip">${x}📲 <b>${where==='setup'&&isIOS()?'Before you start: add Reading Buddy to your Home Screen':'Tip: add Reading Buddy to your Home Screen'}</b> – it opens like an app and your books are kept safer.${install}${body}</div>`;
+}
+function hideA2hs(){ try{ localStorage.setItem(A2HS_KEY,'1'); }catch(e){} const t=$('#a2hsTip'); if(t) t.remove(); toast('Tip hidden – you can find it again in Settings'); }
+window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); INSTALL_EVT=e; if(VIEW==='home') render(); });
+function installApp(){ if(!INSTALL_EVT) return; INSTALL_EVT.prompt(); INSTALL_EVT.userChoice.finally(()=>{ INSTALL_EVT=null; if(VIEW==='home') render(); }); }
+function lastBackupText(){ let last=null; try{ last=localStorage.getItem(BACKUP_KEY); }catch(e){} return last?`Last backup: ${relDay(last.slice(0,10))}`:'No backup saved yet'; }
+
+function openSettings(){
+  if(isDemo()||!S) return;
+  const Y=new Date().getFullYear();
+  openSheet(`<button class="x" onclick="closeSheet()" aria-label="Close">✕</button>
+    <h2 style="margin-top:4px">⚙️ Settings</h2>
+    <p class="savedLine">✓ Saved on this phone</p>
+    <div class="setSec"><h3>Your name</h3>
+      <label class="f" for="st-name" style="margin-top:0">What should we call you?</label>
+      <div class="row"><input type="text" id="st-name" maxlength="20" value="${esc(S.name)}" style="flex:1 1 160px"><button class="btn" onclick="renameMe()">Save name</button></div></div>
+    <div class="setSec"><h3>My ${Y} goal</h3>
+      <div class="goalRow"><button class="btn ghost" style="min-width:56px" aria-label="Lower goal" onclick="setGoalS(-1)">−</button>
+        <span class="n num" id="st-goal" aria-live="polite">${S.goal} book${S.goal===1?'':'s'}</span>
+        <button class="btn ghost" style="min-width:56px" aria-label="Raise goal" onclick="setGoalS(1)">+</button></div>
+      <p class="small muted" style="margin:6px 0 0">Your goal, your pace.</p></div>
+    <div class="setSec"><h3>Parent controls</h3>
+      <p class="small" style="margin-top:0">Junior or Teen mode, book ideas for 13+, progress and the PIN.</p>
+      <button class="btn secondary block" onclick="openParent()">🔒 Open parent controls</button></div>
+    <div class="setSec" id="backupSec"><h3>💾 Keep your books safe</h3>
+      <p style="margin-top:0">Your books are saved on this phone only. <b>Save a backup now and then</b> – and keep it somewhere safe, like Files, Google Drive or an email to a grown-up.</p>
+      <p class="small muted" style="margin:0 0 10px" id="lastBackup">${lastBackupText()}</p>
+      <button class="btn block" onclick="saveBackup()">💾 Save a backup</button>
+      <button class="btn secondary block" style="margin-top:8px" onclick="$('#restoreFile').click()">📂 Restore from backup</button>
+      <p class="small muted" id="persistNote" style="margin:8px 0 0">${persistHTML()}</p>
+      ${a2hsTipHTML('settings')}</div>
+    <div class="setSec"><h3>👀 See the demo</h3>
+      <p class="small" style="margin-top:0">Have a look at Mia’s pretend reading, clubs and badges. Your own books aren’t touched.</p>
+      <button class="btn secondary block" onclick="enterDemo()">👀 See the demo</button></div>
+    <div class="setSec"><h3>Start again</h3>
+      <p class="small" style="margin-top:0">Deletes all of ${esc(S.name)}’s books, badges and settings on this phone. A grown-up’s PIN is needed.</p>
+      <button class="btn danger block" onclick="startAgain()">↺ Start again…</button></div>`);
+  requestPersist();
+}
+function renameMe(){ const v=($('#st-name').value||'').trim().replace(/\s+/g,' ').slice(0,20); if(!v){ toast('Please type a name'); $('#st-name').focus(); return; }
+  S.name=v; save(); render(); toast(`Hello, ${v}!`); }
+function setGoalS(d){ S.goal=Math.max(1,Math.min(200,(S.goal||DEFAULT_GOAL)+d)); save(); render(); const g=$('#st-goal'); if(g) g.textContent=`${S.goal} book${S.goal===1?'':'s'}`; }
+function startAgain(){
+  askPin('Start again', `A grown-up’s PIN is needed before deleting ${esc(S.name)}’s reading.`, ()=>{
+    const n=S.books.length;
+    openSheet(`<button class="x" onclick="closeSheet()" aria-label="Close">✕</button>
+      <h2 style="margin-top:4px">Start again?</h2>
+      <p>This deletes <b>${n} book${n===1?'':'s'}</b>, the reading streak, badges, clubs and settings for <b>${esc(S.name)}</b> on this phone. It can’t be undone.</p>
+      <p class="small">The demo isn’t affected.</p>
+      <button class="btn block" onclick="saveBackup()">💾 Save a backup first</button>
+      <button class="btn danger block" style="margin-top:10px" id="reallyStart" onclick="reallyStartAgain()">Yes, delete everything</button>
+      <button class="btn ghost block" style="margin-top:10px" onclick="closeSheet()">No, keep my books</button>`);
+  });
+}
+function reallyStartAgain(){
+  if(!confirm(`Last check: delete all of ${S.name}’s reading from this phone? This can’t be undone.`)) return;
+  try{ Object.keys(localStorage).filter(k=>k.startsWith(ME_PREFIX)).forEach(k=>localStorage.removeItem(k)); }catch(e){}
+  S=null; SU_BAND='junior'; switchTo(ME, 'All cleared – ready for a fresh start');
+}
+function backupData(){
+  save(); const data={};
+  for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k && k.startsWith(ME_PREFIX) && k!==BACKUP_KEY && k!==ME_PREFIX+'unreadable') data[k]=localStorage.getItem(k); }
+  return {app:'Reading Buddy Kids', format:1, savedAt:new Date().toISOString(), name:S.name, books:S.books.length, data};
+}
+async function saveBackup(){
+  if(!S||isDemo()) return;
+  let json; try{ json=JSON.stringify(backupData(), null, 1); }catch(e){ toast('Sorry – the backup couldn’t be made'); return; }
+  const slug=(S.name||'reader').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'reader';
+  const name=`reading-buddy-${slug}-backup-${today()}.json`;
+  const done=msg=>{ try{ localStorage.setItem(BACKUP_KEY, new Date().toISOString()); }catch(e){} const l=$('#lastBackup'); if(l) l.textContent=lastBackupText(); toast(msg); };
+  let file=null; try{ file=new File([json], name, {type:'application/json'}); }catch(e){}
+  // iPhone/Android: the share sheet offers "Save to Files", Google Drive or sending it to a grown-up
+  if(file && (isIOS()||isAndroid()) && navigator.canShare && navigator.canShare({files:[file]})){
+    try{ await navigator.share({files:[file], title:'Reading Buddy backup'}); done('Backup saved'); return; }
+    catch(e){ if(e && e.name==='AbortError') return; }
+  }
+  const url=URL.createObjectURL(file||new Blob([json],{type:'application/json'})), a=document.createElement('a');
+  a.href=url; a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); },1500);
+  done('Backup downloaded – keep it somewhere safe');
+}
+function restoreBackup(inp){
+  const f=inp.files&&inp.files[0]; inp.value=''; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    let b=null; try{ b=JSON.parse(rd.result); }catch(e){}
+    const ok = b && b.app==='Reading Buddy Kids' && b.data && typeof b.data==='object';
+    const keys = ok ? Object.keys(b.data).filter(k=>k.startsWith(ME_PREFIX) && typeof b.data[k]==='string') : [];
+    let prof=null; try{ prof=JSON.parse(b.data[ME_KEY]); }catch(e){}
+    if(!ok || !prof || !Array.isArray(prof.books)){ toast('That file isn’t a Reading Buddy backup'); return; }
+    const when=b.savedAt?fmtDate(String(b.savedAt).slice(0,10)):'an unknown date', n=prof.books.length;
+    if(!confirm(`Restore ${prof.name||'the'}’s backup from ${when}? It has ${n} book${n===1?'':'s'}.${hasMe()?'\n\nThis replaces the reading saved on this phone now.':''}`)) return;
+    try{
+      Object.keys(localStorage).filter(k=>k.startsWith(ME_PREFIX)).forEach(k=>localStorage.removeItem(k));
+      keys.forEach(k=>localStorage.setItem(k, b.data[k]));
+      sessionStorage.removeItem(DEMO_FLAG); sessionStorage.setItem(TOAST_FLAG, `Backup restored – welcome back, ${prof.name||'reader'}!`);
+    }catch(e){ alert('Sorry – the backup couldn’t be restored. This phone may be out of space.'); return; }
+    location.reload();
+  };
+  rd.readAsText(f);
+}
+
 /* ===================== start ===================== */
 load(); applyChrome();
-// once a user adds their own book, the "demo" banner stays until reset; seeded flag is just for the banner
+if(S && !isDemo()) requestPersist();
+try{ const t=sessionStorage.getItem(TOAST_FLAG); if(t){ sessionStorage.removeItem(TOAST_FLAG); setTimeout(()=>toast(t),300); } }catch(e){}
 go('home');
 </script>
 </body>
